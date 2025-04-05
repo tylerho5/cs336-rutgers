@@ -65,20 +65,20 @@ CREATE TABLE County (
     FOREIGN KEY (state_code) REFERENCES State(state_code)
 );
 
--- Ethnicity table
-CREATE TABLE Ethnicity (
+-- EthnicityName table
+CREATE TABLE EthnicityName (
     ethnicity_code CHAR(1) PRIMARY KEY,
     ethnicity_name VARCHAR(100) NOT NULL
 );
 
--- Race table
-CREATE TABLE Race (
+-- RaceName table
+CREATE TABLE RaceName (
     race_code CHAR(1) PRIMARY KEY,
     race_name VARCHAR(100) NOT NULL
 );
 
--- Sex table
-CREATE TABLE Sex (
+-- SexName table
+CREATE TABLE SexName (
     sex_code CHAR(1) PRIMARY KEY,
     sex_name VARCHAR(100) NOT NULL
 );
@@ -89,8 +89,8 @@ CREATE TABLE PurchaserType (
     purchaser_type_name VARCHAR(100) NOT NULL
 );
 
--- DenialReason table
-CREATE TABLE DenialReason (
+-- DenialReasonName table
+CREATE TABLE DenialReasonName (
     denial_reason_code CHAR(1) PRIMARY KEY,
     denial_reason_name VARCHAR(100) NOT NULL
 );
@@ -173,10 +173,10 @@ CREATE TABLE LoanApplication (
     FOREIGN KEY (preapproval) REFERENCES Preapproval(preapproval),
     FOREIGN KEY (action_taken) REFERENCES ActionTaken(action_taken),
     FOREIGN KEY (location_id) REFERENCES Location(location_id),
-    FOREIGN KEY (applicant_ethnicity) REFERENCES EthnicityLookup(ethnicity_code),
-    FOREIGN KEY (co_applicant_ethnicity) REFERENCES EthnicityLookup(ethnicity_code),
-    FOREIGN KEY (applicant_sex) REFERENCES SexLookup(sex_code),
-    FOREIGN KEY (co_applicant_sex) REFERENCES SexLookup(sex_code),
+    FOREIGN KEY (applicant_ethnicity) REFERENCES EthnicityName(ethnicity_code),
+    FOREIGN KEY (co_applicant_ethnicity) REFERENCES EthnicityName(ethnicity_code),
+    FOREIGN KEY (applicant_sex) REFERENCES SexName(sex_code),
+    FOREIGN KEY (co_applicant_sex) REFERENCES SexName(sex_code),
     FOREIGN KEY (purchaser_type) REFERENCES PurchaserType(purchaser_type),
     FOREIGN KEY (hoepa_status) REFERENCES HOEPAStatus(hoepa_status),
     FOREIGN KEY (lien_status) REFERENCES LienStatus(lien_status),
