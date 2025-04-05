@@ -398,7 +398,6 @@ SELECT DISTINCT
 FROM Preliminary
 WHERE edit_status != '';
 
--- Insert into RespondentAgency
 INSERT INTO RespondentAgency (as_of_year, respondent_id, agency_code)
 SELECT DISTINCT 
     NULLIF(as_of_year, '')::INTEGER, 
@@ -407,13 +406,78 @@ SELECT DISTINCT
 FROM Preliminary
 WHERE as_of_year != '' AND respondent_id != '' AND agency_code != '';
 
+-- fill ApplicantRace table
+INSERT INTO ApplicantRace (ID, race_number, race_code)
+SELECT ID, 1, NULLIF(applicant_race_1, '')::SMALLINT
+FROM Preliminary
+WHERE applicant_race_1 != '';
 
+INSERT INTO ApplicantRace (ID, race_number, race_code)
+SELECT ID, 2, NULLIF(applicant_race_2, '')::SMALLINT
+FROM Preliminary
+WHERE applicant_race_2 != '';
 
--- LOCATION TABLE NEXT
--- use temporary table to store distinct locations
+INSERT INTO ApplicantRace (ID, race_number, race_code)
+SELECT ID, 3, NULLIF(applicant_race_3, '')::SMALLINT
+FROM Preliminary
+WHERE applicant_race_3 != '';
 
-CREATE TEMP TABLE DistinctLocations AS
+INSERT INTO ApplicantRace (ID, race_number, race_code)
+SELECT ID, 4, NULLIF(applicant_race_4, '')::SMALLINT
+FROM Preliminary
+WHERE applicant_race_4 != '';
 
--- to be done
+INSERT INTO ApplicantRace (ID, race_number, race_code)
+SELECT ID, 5, NULLIF(applicant_race_5, '')::SMALLINT
+FROM Preliminary
+WHERE applicant_race_5 != '';
 
-FROM Preliminary;
+-- fill CoApplicantRace table
+INSERT INTO CoApplicantRace (ID, race_number, race_code)
+SELECT ID, 1, NULLIF(co_applicant_race_1, '')::SMALLINT
+FROM Preliminary
+WHERE co_applicant_race_1 != '';
+
+INSERT INTO CoApplicantRace (ID, race_number, race_code)
+SELECT ID, 2, NULLIF(co_applicant_race_2, '')::SMALLINT
+FROM Preliminary
+WHERE co_applicant_race_2 != '';
+
+INSERT INTO CoApplicantRace (ID, race_number, race_code)
+SELECT ID, 3, NULLIF(co_applicant_race_3, '')::SMALLINT
+FROM Preliminary
+WHERE co_applicant_race_3 != '';
+
+INSERT INTO CoApplicantRace (ID, race_number, race_code)
+SELECT ID, 4, NULLIF(co_applicant_race_4, '')::SMALLINT
+FROM Preliminary
+WHERE co_applicant_race_4 != '';
+
+INSERT INTO CoApplicantRace (ID, race_number, race_code)
+SELECT ID, 5, NULLIF(co_applicant_race_5, '')::SMALLINT
+FROM Preliminary
+WHERE co_applicant_race_5 != '';
+
+-- fill DenialReasons table
+INSERT INTO DenialReasons (ID, reason_number, denial_reason_code)
+SELECT ID, 1, NULLIF(denial_reason_1, '')::SMALLINT
+FROM Preliminary
+WHERE denial_reason_1 != '';
+
+INSERT INTO DenialReasons (ID, reason_number, denial_reason_code)
+SELECT ID, 2, NULLIF(denial_reason_2, '')::SMALLINT
+FROM Preliminary
+WHERE denial_reason_2 != '';
+
+INSERT INTO DenialReasons (ID, reason_number, denial_reason_code)
+SELECT ID, 3, NULLIF(denial_reason_3, '')::SMALLINT
+FROM Preliminary
+WHERE denial_reason_3 != '';
+
+-- create temp table to handle location data
+
+-- fill location table with distinct values from temp table
+
+-- create temp table for creating location_id
+
+-- use temp table to modify LoanApplication table to include location_id
