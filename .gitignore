@@ -1,0 +1,25 @@
+*.gguf
+*.md
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.env.*
+.envrc
+venv/
+*.egg-info/
+dist/
+build/
+
+# macOS
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+
+# Editor/IDE
+.vscode/
+.idea/
