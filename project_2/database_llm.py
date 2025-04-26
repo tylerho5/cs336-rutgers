@@ -4,6 +4,7 @@ import ilab_script
 
 model_name = "Phi-3.5-mini-instruct-Q4_K_M.gguf"
 
+
 def main():
     # Load the database schema
     context = llm_manager.load_schema()
