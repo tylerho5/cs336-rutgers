@@ -11,7 +11,7 @@ def load_schema():
     
     context = ""
 
-    with open("project_1/schema_context.sql", "r") as f:
+    with open("project_2/schema_context.sql", "r") as f:
         context = f.read()
 
     return context
@@ -28,7 +28,7 @@ def build_prompt(context, question):
     {context}
     The question is as follows:
     {question}
-    Your answer should only be a SQL query that answers the question.
+    Your response should only include the SQL query, without any additional text or explanation.
     """
 
     return prompt
@@ -66,8 +66,8 @@ def initalize_llm(model_name):
             model_path=str(model_file_path), # may not need to cast to str
             n_gpu_layers=-1,
             seed=1337,
-            n_ctx=2048,
+            n_ctx=3072,
             verbose=False  # keep this to disable other logs
         )
-        
+
     return llm
