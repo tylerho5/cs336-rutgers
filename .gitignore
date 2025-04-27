@@ -1,5 +1,6 @@
 *.gguf
 *.md
+llm_output.txt
 
 # Python
 __pycache__/
