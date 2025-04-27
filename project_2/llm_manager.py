@@ -22,13 +22,14 @@ def build_prompt(context, question):
     '''
 
     prompt = f"""
-    You are a SQL expert. You will be given a SQL database schema and a question.
-    Your task is to generate a SQL query that answers the question based on the schema.
+    You are an SQL expert. You will be given a SQL database schema and a question.
+    Your task is to generate an SQL query that answers the question based on the schema.
     The schema is as follows:
     {context}
     The question is as follows:
     {question}
-    Your response should only include the SQL query, without any additional text or explanation.
+    Your response should only include the SQL query.
+    SQL: 
     """
 
     return prompt
@@ -60,7 +61,7 @@ def initalize_llm(model_name):
     script_dir = Path(__file__).parent
     model_file_path = script_dir / 'model' / model_name
 
-    # Suppress stderr during Llama initialization
+    # suppress stderr during Llama initialization
     with open(os.devnull, 'w') as f, contextlib.redirect_stderr(f):
         llm = Llama(
             model_path=str(model_file_path), # may not need to cast to str
