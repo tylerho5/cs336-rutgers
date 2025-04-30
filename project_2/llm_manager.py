@@ -40,15 +40,20 @@ def query_llm(llm, prompt):
     '''
 
     # use create_chat_completion for instruction-tuned models
-    output = llm.create_chat_completion(
-        messages=[
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ],
-        max_tokens=200
-    )
+    try: 
+        output = llm.create_chat_completion(
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            max_tokens=200
+        )
+        
+    except Exception as e:
+        print(f"Error querying LLM: {e}")
+        quit()
     
     return output['choices'][0]['message']['content']
 
@@ -63,12 +68,18 @@ def initalize_llm(model_name):
 
     # suppress stderr during Llama initialization
     with open(os.devnull, 'w') as f, contextlib.redirect_stderr(f):
-        llm = Llama(
-            model_path=str(model_file_path), # may not need to cast to str
-            n_gpu_layers=-1,
-            seed=1337,
-            n_ctx=3072,
-            verbose=False  # keep this to disable other logs
-        )
+        try:
+            llm = Llama(
+                model_path=str(model_file_path), # may not need to cast to str
+                n_gpu_layers=-1,
+                seed=1337,
+                n_ctx=3072,
+                verbose=False  # keep this to disable other logs
+            )
+
+        except Exception as e:
+            print(f"Error loading LLM: {e}")
+            print("Consider checking model path...")
+            quit()
 
     return llm
