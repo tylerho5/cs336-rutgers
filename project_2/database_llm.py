@@ -1,3 +1,18 @@
+'''
+to run script:
+
+Windows:
+
+- Command Prompt: 
+set KMP_DUPLICATE_LIB_OK=TRUE 
+python project_2\database_llm.py
+
+- PowerShell:
+$env:KMP_DUPLICATE_LIB_OK="TRUE"; python project_2\database_llm.py
+
+macOS/Linux: KMP_DUPLICATE_LIB_OK=TRUE python project_2/database_llm.py
+'''
+
 import time
 
 import ilab_script
@@ -5,8 +20,9 @@ import llm_manager
 import query_extraction
 import ssh_handler
 
-
 model_name = "Phi-3.5-mini-instruct-Q4_K_M.gguf"
+
+hostname = "ilab.cs.rutgers.edu"
 
 def main():
     # load the database schema
@@ -21,7 +37,7 @@ def main():
 
         # get the question from the user
         question = input("Enter your question: ")
-        question = question.strip()
+        #question = question.strip()
 
         if question.lower() == "exit":
             print("Exiting...")
@@ -32,9 +48,9 @@ def main():
 
         # prompt the llm
         response = llm_manager.query_llm(llm, prompt)
-        response = response.strip()
+        #response = response.strip()
 
-        with open('llm_output.txt', 'a') as f:
+        with open('project_2/llm_output.txt', 'a') as f:
             f.write("\n\n==================== LOG ENTRY START ====================\n")
             f.write(f"Timestamp: {timestamp}\n")
             f.write(f"Question: {question}\n\n")
@@ -45,7 +61,12 @@ def main():
 
         query = query_extraction.extract_query_from_text(response)
 
-        print(f"Generated response: \n{query}\n")
+    ## to be completed:
+    # get ssh credentials
+
+    # send extracted SQL query to iLab
+
+    # display results
 
 if __name__ == "__main__":
     main()
