@@ -4,6 +4,8 @@ from pathlib import Path
 
 from llama_cpp import Llama
 
+structured_prompting = True
+
 def load_schema():
     '''
     load database schema from cut-down project_1 sql file
@@ -21,16 +23,37 @@ def build_prompt(context, question):
     build prompt for LLM
     '''
 
-    prompt = f"""
-    You are an SQL expert. You will be given a SQL database schema and a question.
-    Your task is to generate an SQL query that answers the question based on the schema.
-    The schema is as follows:
-    {context}
-    The question is as follows:
-    {question}
-    Your response should only include the SQL query, adhering to the structure specified in the schema.
-    SQL: 
-    """
+    if structured_prompting:
+        prompt = f"""
+        Input Schema: 
+        {context}
+
+        Input Question:
+        {question}
+
+        Instructions:
+        1. Analyze the question.
+        2. Identify necessary tables and columns strictly from the Input Schema provided above. Verify names match exactly.
+        3. Construct one PostgreSQL query to answer the question.
+        4. Output only the generated SQL query.
+        5. Enclose the query in ```sql markdown tags.
+        """
+    
+    else: 
+        prompt = f"""
+            You are an expert PostgreSQL assistant. You will be given a database schema and a question.
+            Your task is to generate a single, valid PostgreSQL query that answers the question based *only* on the provided schema.
+            Carefully verify that all table names and column names used in your query exist exactly as defined in the schema below. Do not use any tables or columns not explicitly mentioned.
+
+            Schema:
+            {context}
+
+            Question:
+            {question}
+
+            Provide *only* the SQL query, enclosed in ```sql markdown tags. Do not include any explanations or introductory text.
+            SQL:
+            """
 
     return prompt
 
@@ -73,7 +96,7 @@ def initalize_llm(model_name):
                 model_path=str(model_file_path), # may not need to cast to str
                 n_gpu_layers=-1,
                 seed=1337,
-                n_ctx=3072,
+                n_ctx=4096,
                 verbose=False  # keep this to disable other logs
             )
 
