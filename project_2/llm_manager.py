@@ -28,7 +28,7 @@ def build_prompt(context, question):
     {context}
     The question is as follows:
     {question}
-    Your response should only include the SQL query.
+    Your response should only include the SQL query, adhering to the structure specified in the schema.
     SQL: 
     """
 
@@ -48,7 +48,7 @@ def query_llm(llm, prompt):
                     "content": prompt
                 }
             ],
-            max_tokens=200
+            max_tokens=500
         )
         
     except Exception as e:
