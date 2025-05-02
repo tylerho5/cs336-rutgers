@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 ilab_script.py
 
@@ -20,23 +19,38 @@ import os
 import pandas as pd
 import psycopg2
 from psycopg2 import sql
+import dotenv 
 
-# Database connection parameters - HARDCODED VERSION
-DB_NAME = "postgres"
-DB_USER = "your_username"  # Replace with your actual PostgreSQL username
-DB_PASSWORD = "your_password"  # Replace with your actual password if needed, otherwise leave as empty string
-DB_HOST = "postgres.cs.rutgers.edu"
+# load environment variables from .env file
+dotenv.load_dotenv()
+
+# database connection params, grabbing from environment
+DB_NAME = os.getenv("DB_USER", "postgres")
+DB_USER = os.getenv("DB_USER", "default_user")  
+# grabs pass, otherwise default is no pass
+DB_PASSWORD = os.getenv("DB_PASSWORD", "")
+DB_HOST = "localhost" ### error is probably with hostname
 DB_PORT = "5432"
 
 def get_db_connection():
-    """Establish connection to the Rutgers PostgreSQL database"""
+    '''
+    connect to database on iLab
+    '''
+    
+    # check if DB_USER loaded properly
+    if DB_USER == "default_user" and os.getenv("DB_USER") is None:
+        print("Error: DB_USER environment variable not set.", file=sys.stderr)
+        print("Please create a .env file with DB_USER='your_username'", file=sys.stderr)
+        sys.exit(1)
+        
     try:
         # Build connection parameters
         conn_params = {
             "dbname": DB_NAME,
             "user": DB_USER,
             "host": DB_HOST,
-            "port": DB_PORT
+            "port": DB_PORT,
+            "connect_timeout": 15 # Increase connection timeout to 15 seconds
         }
         
         # Add password only if it's not empty
