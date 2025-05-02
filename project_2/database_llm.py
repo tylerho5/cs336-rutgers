@@ -4,8 +4,7 @@ to run script:
 Windows:
 
 - Command Prompt: 
-set KMP_DUPLICATE_LIB_OK=TRUE 
-python project_2\database_llm.py
+set KMP_DUPLICATE_LIB_OK=TRUE python project_2\database_llm.py
 
 - PowerShell:
 $env:KMP_DUPLICATE_LIB_OK="TRUE"; python project_2\database_llm.py
@@ -39,7 +38,7 @@ def main():
 
     # initialize the llm
     try:
-        print("Initializing the LLM...")
+        print("\nInitializing the LLM...")
         llm = llm_manager.initalize_llm(model_name)
         print("LLM initialized successfully.")
     except Exception as e:
@@ -47,7 +46,7 @@ def main():
         sys.exit(1)
 
     # get ssh credentials once at the beginning
-    print("\nPlease enter your iLab credentials:")
+    print("\nPlease enter your iLab credentials")
     try:
         user, pwd = ssh_handler.get_ssh_credentials()
         
@@ -71,7 +70,7 @@ def main():
         print(f"Error connecting to iLab: {e}")
         sys.exit(1)
     
-    print("\nConnected to iLab. You can now ask questions about the database.")
+    print("\nYou can now ask questions about the database.")
     print("Type 'exit' to quit the program.\n")
 
     # main loop
