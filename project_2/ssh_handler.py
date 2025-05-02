@@ -3,36 +3,54 @@ import paramiko
 
 def get_ssh_credentials():
     '''
-    gets user, host, and pwd (securely)
+    gets user and pwd (securely)
     '''
-
-    host = input("Enter iLab hostname: ")
 
     user = input("Enter NetID: ")
 
-    pwd = getpass.getpass(f"Enter pwd for {user}@{host}: ")
+    pwd = getpass.getpass(f"Enter password for {user}@ilab.cs.rutgers.edu: ")
 
-    return host, user, pwd
+    return user, pwd
 
-def execute_query(host, user, pwd, query, ilab_script_path):
+def execute_query(host, user, pwd, query, wd_path, db_user, db_pwd):
     '''
     connects to iLab and runs iLab script, passing query
+    Sets DB_USER and DB_PASSWORD environment variables for the script.
     '''
 
+    ilab_script_path = wd_path + "/ilab_script.py"
+
+    venv_path = wd_path + "/venv"
+
     client = paramiko.SSHClient()
-    client.set_missing_host_key_policy(paramiko.RejectPolicy())
+    # Use AutoAddPolicy for convenience if host keys change or are new
+    client.set_missing_host_key_policy(paramiko.AutoAddPolicy()) 
 
     try:
         client.connect(host, username=user, password=pwd, timeout=10)
 
-        command = f"python3 {ilab_script_path} '{query}'"
+        # Escape single quotes in password just in case
+        db_pwd_escaped = db_pwd.replace("'", "'\\''")
+        # Set environment variables before executing the script
+        command = f"cd {wd_path}; source venv/bin/activate; export DB_USER='{db_user}'; export DB_PASSWORD='{db_pwd_escaped}'; python3 {ilab_script_path} '{query}'"
 
-        stdin, stdout, stderr = client.exec_command(command, timeout=60)
+        stdin, stdout, stderr = client.exec_command(command, timeout=300)
+        
+        # Wait for the command to complete and get the exit status
+        exit_status = stdout.channel.recv_exit_status()
+        
         output = stdout.read().decode('utf-8').strip()
         error = stderr.read().decode('utf-8').strip()
 
-        if error:
-            print(f"Command error:\n{error}")
+        # Check exit status first
+        if exit_status != 0:
+            print(f"Remote command failed with exit status {exit_status}")
+            if error:
+                print(f"Command error output:\n{error}")
+            # Optionally print stdout as well for debugging
+            # if output:
+            #     print(f"Command standard output:\n{output}")
+            return None # Indicate failure
 
         return output
     
@@ -50,31 +68,51 @@ def execute_query(host, user, pwd, query, ilab_script_path):
         if client:
             client.close()
 
-def execute_query_stdin(host, user, pwd, query, ilab_script_path):
+def execute_query_stdin(host, user, pwd, query, wd_path, db_user, db_pwd):
     '''
     connects to iLab and runs iLab script, passing query via stdin (for extra credit)
+    Sets DB_USER and DB_PASSWORD environment variables for the script.
     '''
 
+    ilab_script_path = wd_path + "/ilab_script.py"
+
+    venv_path = wd_path + "/venv"
+
     client = paramiko.SSHClient()
-    client.set_missing_host_key_policy(paramiko.RejectPolicy())
+    # Use AutoAddPolicy for convenience if host keys change or are new
+    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
     try:
         client.connect(host, username=user, password=pwd, timeout=10)
 
-        command = f"python3 {ilab_script_path}"
+        # Escape single quotes in password just in case
+        db_pwd_escaped = db_pwd.replace("'", "'\\''")
+        # Set environment variables before executing the script
+        # Corrected command to execute the script file, not the directory
+        command = f"cd {wd_path}; source venv/bin/activate; export DB_USER='{db_user}'; export DB_PASSWORD='{db_pwd_escaped}'; python3 {ilab_script_path}"
 
-        stdin, stdout, stderr = client.exec_command(command, timeout=60)
+        stdin, stdout, stderr = client.exec_command(command, timeout=300)
         
         # Write query to stdin and flush
         stdin.write(query)
         stdin.flush()
         stdin.channel.shutdown_write()  # Signal EOF
         
+        # Wait for the command to complete and get the exit status
+        exit_status = stdout.channel.recv_exit_status()
+        
         output = stdout.read().decode('utf-8').strip()
         error = stderr.read().decode('utf-8').strip()
 
-        if error:
-            print(f"Command error:\n{error}")
+        # Check exit status first
+        if exit_status != 0:
+            print(f"Remote command failed with exit status {exit_status}")
+            if error:
+                print(f"Command error output:\n{error}")
+            # Optionally print stdout as well for debugging
+            # if output:
+            #     print(f"Command standard output:\n{output}")
+            return None # Indicate failure
 
         return output
     
