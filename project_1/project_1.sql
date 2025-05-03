@@ -1,3 +1,6 @@
+-- extend statement timeout to execute properly on iLab
+SET statement_timeout = '10min';
+
 -- drop previous tables to reduce conflict when rerunning
 DROP TABLE IF EXISTS DenialReasons CASCADE;
 DROP TABLE IF EXISTS CoApplicantRace CASCADE;
