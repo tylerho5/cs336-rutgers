@@ -1,0 +1,6 @@
+# dependencies for the project
+pandas
+psycopg2-binary
+python-dotenv
+paramiko
+llama-cpp-python==0.3.8
