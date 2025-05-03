@@ -4,6 +4,7 @@ from pathlib import Path
 
 from llama_cpp import Llama
 
+# toggle for prompting style for testing
 structured_prompting = True
 
 def load_schema():
@@ -21,23 +22,26 @@ def load_schema():
 def build_prompt(context, question):
     '''
     build prompt for LLM
+    has option to either use structured formatting or regular sentences
     '''
 
+    # two different styles of prompting for testing purposes
+    # not sure if structured is better
     if structured_prompting:
         prompt = f"""
-        Input Schema: 
-        {context}
+            Input Schema: 
+            {context}
 
-        Input Question:
-        {question}
+            Input Question:
+            {question}
 
-        Instructions:
-        1. Analyze the question.
-        2. Identify necessary tables and columns strictly from the Input Schema provided above. Verify names match exactly.
-        3. Construct one PostgreSQL query to answer the question.
-        4. Output only the generated SQL query.
-        5. Enclose the query in ```sql markdown tags.
-        """
+            Instructions:
+            1. Analyze the question.
+            2. Identify necessary tables and columns strictly from the Input Schema provided above. Verify names match exactly.
+            3. Construct one PostgreSQL query to answer the question.
+            4. Output only the generated SQL query.
+            5. Enclose the query in ```sql markdown tags.
+            """
     
     else: 
         prompt = f"""
