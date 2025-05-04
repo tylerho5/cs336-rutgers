@@ -1,0 +1,59 @@
+Key tables and relationships
+
+**LoanApplication – fact table**
+
+* ID: primary key
+* loan\_amount\_000s, applicant\_income\_000s: dollar values in thousands
+* as\_of\_year, respondent\_id: foreign key to RespondentAgency (reporting lender for that year)
+* loan\_type → LoanType, property\_type → PropertyType, loan\_purpose → LoanPurpose, owner\_occupancy → OwnerOccupancy
+* preapproval → Preapproval, action\_taken → ActionTaken
+* location\_id → Location (links to tract, county, state, MSA)
+* applicant\_ethnicity, co\_applicant\_ethnicity → Ethnicity
+* applicant\_sex, co\_applicant\_sex → Sex
+* purchaser\_type → PurchaserType, hoepa\_status → HOEPAStatus, lien\_status → LienStatus, edit\_status → EditStatus
+* rate\_spread, sequence\_number, application\_date\_indicator: supplemental columns
+
+**DenialReasons – junction table (many‑to‑many)**
+
+* ID: foreign key to LoanApplication
+* reason\_number: 1‑3, participates in composite primary key
+* denial\_reason\_code: foreign key to DenialReason
+
+**ApplicantRace – junction table (many races per applicant)**
+
+* ID: foreign key to LoanApplication
+* race\_number: 1‑5, participates in composite primary key
+* race\_code: foreign key to Race
+
+**CoApplicantRace – junction table (co‑applicant races)**
+
+* ID: foreign key to LoanApplication
+* race_number: 1–5 per co-applicant
+* race_code: foreign key to Race
+* composite primary key: (ID, race_number)
+
+Lookup tables
+
+* **DenialReason**: denial\_reason\_code (PK), denial\_reason\_name
+* **Race**: race\_code (PK), race\_name
+* **LoanType**: loan\_type (PK), loan\_type\_name
+* **PropertyType**: property\_type (PK), property\_type\_name
+* **LoanPurpose**: loan\_purpose (PK), loan\_purpose\_name
+* **OwnerOccupancy**: owner\_occupancy (PK), owner\_occupancy\_name
+* **Preapproval**: preapproval (PK), preapproval\_name
+* **ActionTaken**: action\_taken (PK), action\_taken\_name
+* **Ethnicity**: ethnicity\_code (PK), ethnicity\_name
+* **Sex**: sex\_code (PK), sex\_name
+* **PurchaserType**: purchaser\_type (PK), purchaser\_type\_name
+* **HOEPAStatus**: hoepa\_status (PK), hoepa\_status\_name
+* **LienStatus**: lien\_status (PK), lien\_status\_name
+* **EditStatus**: edit\_status (PK), edit\_status\_name
+
+Geography and agency support tables
+
+* **Location**: location\_id (PK); links msamd, state\_code, county\_code and tract‑level data
+* **MSA**: msamd (PK), msamd\_name
+* **State**: state\_code (PK), state\_name, state\_abbr
+* **County**: county\_code + state\_code (composite PK), county\_name
+* **Agency**: agency\_code (PK), agency\_name, agency\_abbr
+* **RespondentAgency**: as\_of\_year + respondent\_id (composite PK), agency\_code → Agency

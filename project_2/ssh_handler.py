@@ -13,12 +13,6 @@ def get_ssh_credentials():
     # Get credentials from environment variables
     user = os.getenv('NETID')
     pwd = os.getenv('PASSWORD')
-
-    '''
-    .env file should have the following:
-    NETID=YOUR_NETID
-    PASSWORD=YOUR_PASSWORD
-    '''
     
     # Fall back to interactive input if not found in .env
     if user is None:

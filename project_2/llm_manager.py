@@ -14,7 +14,7 @@ def load_schema():
     
     context = ""
 
-    with open("project_2/schema_context.sql", "r") as f:
+    with open("project_2/schema_context.txt", "r") as f:
         context = f.read()
 
     return context
@@ -25,22 +25,44 @@ def build_prompt(context, question):
     has option to either use structured formatting or regular sentences
     '''
 
-    # two different styles of prompting for testing purposes
+    # Two different styles of prompting for testing purposes
     # not sure if structured is better
     if structured_prompting:
         prompt = f"""
-            Input Schema: 
-            {context}
-
-            Input Question:
+            Query:
             {question}
 
+            Database Schema:
+            {context}
+
             Instructions:
-            1. Analyze the question.
-            2. Identify necessary tables and columns strictly from the Input Schema provided above. Verify names match exactly.
-            3. Construct one PostgreSQL query to answer the question.
-            4. Output only the generated SQL query.
-            5. Enclose the query in ```sql markdown tags.
+            1. Analyze the question carefully to identify the entities and attributes needed.
+            2. IMPORTANT: Always use fully qualified column names (table.column) for ALL columns.
+            3. When joining tables:
+               - Identify whether you need junction tables for many-to-many relationships
+               - Always use the correct join keys as specified in the schema
+               - Use meaningful table aliases consistently throughout the query
+            4. Follow proper SQL patterns:
+               - Use explicit JOIN syntax with proper ON conditions
+               - Match column and table names EXACTLY as they appear in the schema
+               - GROUP BY all non-aggregated columns in SELECT statements
+               - Use appropriate aliases for calculated columns
+            5. Check the schema carefully before writing your query:
+               - Verify all tables and columns exist exactly as specified
+               - Identify primary and foreign key relationships
+               - Note any junction tables needed for many-to-many relationships
+            6. Construct a single PostgreSQL query that answers the question precisely.
+            7. Output only the SQL query enclosed in ```sql markdown tags.
+
+            Common Errors to Avoid:
+            1. NEVER use unqualified column names when joining multiple tables
+            2. NEVER try to directly join tables that require junction tables - check the schema
+            3. NEVER reference columns that don't exist in the schema (verify each column name carefully)
+            4. ALWAYS include all necessary JOINs when accessing related tables
+            5. ALWAYS check for and use junction tables for many-to-many relationships
+            6. ALWAYS use the exact table and column names as they appear in the schema
+            7. Be careful with aggregate functions (COUNT, SUM, etc.) - include GROUP BY for all non-aggregated columns
+            8. Avoid ambiguous column references - always qualify with table name or alias
             """
     
     else: 
@@ -49,11 +71,11 @@ def build_prompt(context, question):
             Your task is to generate a single, valid PostgreSQL query that answers the question based *only* on the provided schema.
             Carefully verify that all table names and column names used in your query exist exactly as defined in the schema below. Do not use any tables or columns not explicitly mentioned.
 
-            Schema:
-            {context}
-
-            Question:
+            Query:
             {question}
+
+            Database Schema:
+            {context}
 
             Provide *only* the SQL query, enclosed in ```sql markdown tags. Do not include any explanations or introductory text.
             SQL:
