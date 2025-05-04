@@ -29,7 +29,7 @@ DB_NAME = os.getenv("DB_USER", "postgres")
 DB_USER = os.getenv("DB_USER", "default_user")  
 # grabs pass, otherwise default is no pass
 DB_PASSWORD = os.getenv("DB_PASSWORD", "")
-DB_HOST = "localhost" ### error is probably with hostname
+DB_HOST = "postgres.cs.rutgers.edu"
 DB_PORT = "5432"
 
 def get_db_connection():

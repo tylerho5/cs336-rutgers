@@ -1,14 +1,31 @@
 import getpass
 import paramiko
+import os
+from dotenv import load_dotenv
 
 def get_ssh_credentials():
     '''
-    gets user and pwd (securely)
+    gets user and pwd from .env file
     '''
+    # Load environment variables from .env file
+    load_dotenv()
+    
+    # Get credentials from environment variables
+    user = os.getenv('NETID')
+    pwd = os.getenv('PASSWORD')
 
-    user = input("Enter NetID: ")
-
-    pwd = getpass.getpass(f"Enter password for {user}@ilab.cs.rutgers.edu: ")
+    '''
+    .env file should have the following:
+    NETID=YOUR_NETID
+    PASSWORD=YOUR_PASSWORD
+    '''
+    
+    # Fall back to interactive input if not found in .env
+    if user is None:
+        user = input("Enter NetID: ")
+    
+    if pwd is None:
+        pwd = getpass.getpass(f"Enter password for {user}@ilab.cs.rutgers.edu: ")
 
     return user, pwd
 
