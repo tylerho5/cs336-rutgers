@@ -11,8 +11,8 @@ def get_ssh_credentials():
     load_dotenv()
     
     # Get credentials from environment variables
-    user = os.getenv('NETID')
-    pwd = os.getenv('PASSWORD')
+    user = os.getenv('NETID', '')
+    pwd = os.getenv('PASSWORD', '')
     
     # Fall back to interactive input if not found in .env
     if user is None:
