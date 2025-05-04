@@ -83,6 +83,138 @@ def build_prompt(context, question):
 
     return prompt
 
+def build_correction_prompt(question, query, error_msg, relevant_schema):
+    '''
+    build prompt for LLM to correct a SQL query that produced an error
+    
+    Args:
+        question (str): Original user question
+        query (str): Failed SQL query
+        error_msg (str): Error message from database
+        relevant_schema (str): Relevant portion of the schema
+        
+    Returns:
+        str: Prompt for LLM to correct the query
+    '''
+    
+    # Add specific guidance based on error patterns
+    specific_guidance = ""
+    
+    # Column does not exist error
+    if "column" in error_msg.lower() and "does not exist" in error_msg.lower():
+        specific_guidance = """
+        This is a column name error. Check:
+        1. The column might be in a different table than you think
+        2. For many-to-many relationships, you must join to the lookup table to get descriptive fields
+        3. Junction tables (with names ending in 's') typically only contain foreign keys, not descriptive names
+        4. Lookup tables (without 's') contain the actual descriptive names
+        
+        Example fix for column name error:
+        INCORRECT: SELECT J.description FROM JunctionTable J
+        CORRECT:   SELECT L.description FROM JunctionTable J JOIN LookupTable L ON J.lookup_id = L.id
+        """
+    # Missing JOIN condition
+    elif "cross join" in error_msg.lower() or "missing join condition" in error_msg.lower():
+        specific_guidance = """
+        This is a JOIN condition error. Check:
+        1. Every JOIN must have an ON clause with proper conditions
+        2. Make sure foreign keys match between tables
+        3. Verify the join fields exist in both tables
+        
+        Example fix for missing JOIN condition:
+        INCORRECT: SELECT * FROM TableA JOIN TableB
+        CORRECT:   SELECT * FROM TableA A JOIN TableB B ON A.id = B.table_a_id
+        """
+    # Ambiguous column reference
+    elif "ambiguous" in error_msg.lower() and "column" in error_msg.lower():
+        specific_guidance = """
+        This is an ambiguous column reference error. Check:
+        1. Always qualify column names with table aliases when multiple tables are involved
+        2. The same column name might exist in multiple joined tables
+        
+        Example fix for ambiguous column:
+        INCORRECT: SELECT id, code FROM JunctionTable JOIN LookupTable
+        CORRECT:   SELECT J.id, J.code FROM JunctionTable J JOIN LookupTable L ON J.code = L.code
+        """
+    # Missing GROUP BY columns
+    elif "must appear in the group by clause" in error_msg.lower() or "not in group by" in error_msg.lower():
+        specific_guidance = """
+        This is a GROUP BY error. Check:
+        1. All non-aggregated columns in the SELECT clause must also appear in the GROUP BY clause
+        2. You can't mix aggregated and non-aggregated columns without using GROUP BY
+        
+        Example fix for GROUP BY:
+        INCORRECT: SELECT category_name, COUNT(*) FROM Categories JOIN Items GROUP BY category_id
+        CORRECT:   SELECT category_name, COUNT(*) FROM Categories JOIN Items GROUP BY category_name
+        """
+    # Syntax error
+    elif "syntax error" in error_msg.lower():
+        specific_guidance = """
+        This is a syntax error. Check:
+        1. Look for missing commas between columns
+        2. Check for missing parentheses or mismatched quotes
+        3. Verify SQL keywords are properly spaced
+        4. Make sure table aliases are consistent throughout the query
+        
+        Example of common syntax fixes:
+        INCORRECT: SELECT column1 column2 FROM table
+        CORRECT:   SELECT column1, column2 FROM table
+        
+        INCORRECT: SELECT COUNT(*) as count items FROM table
+        CORRECT:   SELECT COUNT(*) as count_items FROM table
+        """
+    # Table does not exist
+    elif "relation" in error_msg.lower() and "does not exist" in error_msg.lower():
+        specific_guidance = """
+        This is a table name error. Check:
+        1. Verify the table name is spelled correctly
+        2. Check the case of the table name (PostgreSQL is case-sensitive)
+        3. Make sure you're not using an alias as if it were a table name
+        4. Confirm the table name exists in the schema
+        
+        Example fix for table name:
+        INCORRECT: SELECT * FROM items
+        CORRECT:   SELECT * FROM Items
+        """
+    
+    prompt = f"""
+        I need to fix a SQL query that failed.
+        
+        Original question: {question}
+        
+        Failed SQL query:
+        ```sql
+        {query}
+        ```
+        
+        Error message:
+        {error_msg}
+        
+        {specific_guidance}
+        
+        Relevant schema:
+        {relevant_schema}
+        
+        Instructions:
+        1. Analyze the error message carefully
+        2. Identify the specific issue in the query
+        3. Fix ONLY what's needed to address the error
+        4. Remember:
+           - Junction tables (often with names ending in 's') typically contain ONLY foreign keys, not descriptive fields
+           - Lookup tables contain the descriptive fields (names, descriptions)
+           - To get descriptive names from a many-to-many relationship, you MUST join both tables
+        5. Use appropriate table aliases (e.g., meaningful short abbreviations)
+        6. Ensure all column and table names match the schema exactly
+        7. Provide the corrected query ONLY
+        8. Enclose the fixed query in ```sql markdown tags
+        
+        REMEMBER: If you need a descriptive name, you MUST join to the lookup table.
+        
+        Please provide a corrected SQL query that resolves this error.
+    """
+    
+    return prompt
+
 def query_llm(llm, prompt):
     '''
     query the LLM with the given prompt
@@ -92,6 +224,10 @@ def query_llm(llm, prompt):
     try: 
         output = llm.create_chat_completion(
             messages=[
+                {
+                    "role": "system",
+                    "content": "You are an expert PostgreSQL assistant. Your task is to generate or fix SQL queries based on database schemas. You provide only the SQL query without explanation unless specifically asked. Always ensure column and table names match the schema exactly."
+                },
                 {
                     "role": "user",
                     "content": prompt

@@ -58,22 +58,20 @@ def execute_query(host, user, pwd, query, wd_path, db_user, db_pwd):
             print(f"Remote command failed with exit status {exit_status}")
             if error:
                 print(f"Command error output:\n{error}")
-            # Optionally print stdout as well for debugging
-            # if output:
-            #     print(f"Command standard output:\n{output}")
-            return None # Indicate failure
+            # Return error rather than None for better error handling
+            return f"Error executing query. Exit status: {exit_status}\nCommand error output:\n{error}"
 
         return output
     
     except paramiko.AuthenticationException:
         print("Authentication failed. Check user and password.")
-        return None
+        return "Error: Authentication failed. Check your username and password."
     except paramiko.SSHException as sshException:
         print(f"Unable to establish connection: {sshException}")
-        return None
+        return f"Error: Unable to establish SSH connection: {sshException}"
     except Exception as e:
         print(f"Error occurred: {e}")
-        return None
+        return f"Error: {e}"
     
     finally:
         if client:
@@ -120,22 +118,20 @@ def execute_query_stdin(host, user, pwd, query, wd_path, db_user, db_pwd):
             print(f"Remote command failed with exit status {exit_status}")
             if error:
                 print(f"Command error output:\n{error}")
-            # Optionally print stdout as well for debugging
-            # if output:
-            #     print(f"Command standard output:\n{output}")
-            return None # Indicate failure
+            # Return error rather than None for better error handling
+            return f"Error executing query. Exit status: {exit_status}\nCommand error output:\n{error}"
 
         return output
     
     except paramiko.AuthenticationException:
         print("Authentication failed. Check user and password.")
-        return None
+        return "Error: Authentication failed. Check your username and password."
     except paramiko.SSHException as sshException:
         print(f"Unable to establish connection: {sshException}")
-        return None
+        return f"Error: Unable to establish SSH connection: {sshException}"
     except Exception as e:
         print(f"Error occurred: {e}")
-        return None
+        return f"Error: {e}"
     
     finally:
         if client:
