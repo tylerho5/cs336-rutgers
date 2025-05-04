@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 def get_ssh_credentials():
     '''
-    gets user and pwd from .env file
+    gets user and pwd from .env file or falls back to user input
     '''
     # Load environment variables from .env file
     load_dotenv()
@@ -13,7 +13,12 @@ def get_ssh_credentials():
     # Get credentials from environment variables
     user = os.getenv('NETID', '')
     pwd = os.getenv('PASSWORD', '')
+
+    # Return credentials from .env if both exist
+    if user and pwd:
+        return user, pwd
     
+    print("\nPlease enter your iLab credentials")
     # Fall back to interactive input if not found in .env
     if user is None:
         user = input("Enter NetID: ")
