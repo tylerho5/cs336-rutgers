@@ -27,7 +27,7 @@ model_name = "Phi-3.5-mini-instruct-Q4_K_M.gguf"
 # ilab configuration
 hostname = "ilab.cs.rutgers.edu"
 
-# adjust this to where ilab_script.py is placed
+# adjust this to where ilab_script.py is placed on iLab instance
 wd_path = "~/cs336/project_2"
 
 # set to False to use command-line args instead of stdin
