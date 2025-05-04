@@ -37,20 +37,7 @@ use_stdin = True
 MAX_CORRECTION_ATTEMPTS = 3
 
 def main():
-    # load the database schema
-    context = llm_manager.load_schema()
-
-    # initialize the llm
-    try:
-        print("\nInitializing the LLM...")
-        llm = llm_manager.initalize_llm(model_name)
-        print("LLM initialized successfully.")
-    except Exception as e:
-        print(f"Error initializing the LLM: {e}")
-        sys.exit(1)
-
     # get ssh credentials once at the beginning
-    print("\nPlease enter your iLab credentials")
     try:
         user, pwd = ssh_handler.get_ssh_credentials()
         
@@ -73,6 +60,18 @@ def main():
     except Exception as e:
         print(f"Error connecting to iLab: {e}")
         sys.exit(1)
+
+    # load the database schema
+    context = llm_manager.load_schema()
+
+    # initialize the llm
+    try:
+        print("\nInitializing the LLM...")
+        llm = llm_manager.initalize_llm(model_name)
+        print("LLM initialized successfully.")
+    except Exception as e:
+        print(f"Error initializing the LLM: {e}")
+        sys.exit(1)
     
     print("\nYou can now ask questions about the database.")
     print("Type 'exit' to quit the program.\n")
@@ -86,7 +85,7 @@ def main():
         timestamp = time.strftime('%I:%M:%S %p %m/%d/%y', time.localtime(time.time()))
 
         try:
-            question = input("\nEnter your question: ")
+            question = input("Enter your question: ")
 
             if question.lower() == "exit":
                 print("Exiting...")
