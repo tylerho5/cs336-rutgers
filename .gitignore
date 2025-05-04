@@ -1,8 +1,4 @@
 *.gguf
-*.md
-
-# log file
-llm_output.txt
 
 # Python
 __pycache__/
