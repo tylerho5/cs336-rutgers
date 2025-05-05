@@ -66,15 +66,6 @@ def main():
     # load the database schema
     context = llm_manager.load_schema()
 
-    # initialize the llm
-    try:
-        print("\nInitializing the LLM...")
-        llm = llm_manager.initalize_llm(model_name)
-        print("LLM initialized successfully.")
-    except Exception as e:
-        print(f"Error initializing the LLM: {e}")
-        sys.exit(1)
-    
     print("\nYou can now ask questions about the database.")
     print("Type 'exit' to quit the program.\n")
 
@@ -98,7 +89,8 @@ def main():
             # --- Step 1: Generate Query Breakdown ---
             print("Generating query plan...")
             breakdown_prompt = llm_manager.build_breakdown_prompt(context, question)
-            breakdown = llm_manager.query_llm(llm, breakdown_prompt)
+            breakdown_llm = llm_manager.get_breakdown_llm()
+            breakdown = llm_manager.query_llm(breakdown_llm, breakdown_prompt)
             print(f"\nRelational Algebra Expression:\n{breakdown}\n")
 
             # Log breakdown generation
@@ -116,7 +108,8 @@ def main():
             # --- Step 2: Generate SQL from Breakdown ---
             print("Generating SQL query from plan...")
             sql_prompt = llm_manager.build_sql_from_breakdown_prompt(breakdown, context, question)
-            response = llm_manager.query_llm(llm, sql_prompt)
+            sql_llm = llm_manager.get_sql_llm()
+            response = llm_manager.query_llm(sql_llm, sql_prompt)
 
             # Log SQL generation response (append to the same log entry)
             with open(os.path.join(log_dir, 'llm_output.txt'), 'a') as f:
@@ -185,7 +178,8 @@ def main():
                         
                         # Get corrected query from LLM
                         print("Generating corrected query...")
-                        correction_response = llm_manager.query_llm(llm, correction_prompt)
+                        correction_llm = llm_manager.get_sql_llm()
+                        correction_response = llm_manager.query_llm(correction_llm, correction_prompt)
                         
                         # Log the correction attempt
                         with open(os.path.join(log_dir, 'query_corrections.txt'), 'a') as f:

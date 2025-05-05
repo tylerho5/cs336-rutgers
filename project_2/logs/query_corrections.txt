@@ -1535,3 +1535,5101 @@ Note: The error message "Authentication failed. Check your username and password
 
 ==================== CORRECTION LOG END (Attempt 2) ======================
 
+
+
+==================== CORRECTION LOG START (Attempt 1) ====================
+Timestamp: 03:37:15 PM 05/05/25
+Question: What is the most common loan denial reason? 
+
+--- Original Query ---
+SELECT d.denial_reason_name FROM DenialReasons d GROUP BY d.denial_reason_name ORDER BY COUNT(d.denial_reason_code) DESC LIMIT 1;
+
+--- Query Plan/Breakdown ---
+ SELECT d.denial_reason_name FROM DenialReasons d GROUP BY d.denial_reason_name ORDER BY COUNT(d.denial_reason_code) DESC LIMIT 1;
+
+--- Failed Query (Attempt {correction_attempts}) ---
+SELECT d.denial_reason_name FROM DenialReasons d GROUP BY d.denial_reason_name ORDER BY COUNT(d.denial_reason_code) DESC LIMIT 1;
+
+--- Error Message ---
+Error executing query. Exit status: 1
+Command error output:
+Database error: column d.denial_reason_name does not exist
+LINE 1: SELECT d.denial_reason_name FROM DenialReasons d GROUP BY d....
+
+Hints:
+HINT:  Perhaps you meant to reference the column "d.denial_reason_code".
+
+--- Correction Prompt ---
+
+        Fix the SQL query based on the error, original plan, and schema. Pay special attention to the hint in the error message if there is one.
+
+        Instructions:
+        1. Fix the SQL query based on the error message and hints.
+        2. Compare Failed SQL to the Original Plan and Schema.
+        3. Ensure all necessary tables are properly joined, especially for junction tables.
+        4. Use proper table aliases and qualify all column references.
+        5. Maintain the original query's intent as shown in the plan.
+        6. Output only the corrected SQL query, no explanations.
+
+        Original question: What is the most common loan denial reason? 
+
+        Original Plan:
+         SELECT d.denial_reason_name FROM DenialReasons d GROUP BY d.denial_reason_name ORDER BY COUNT(d.denial_reason_code) DESC LIMIT 1;
+
+        Failed SQL query:
+        ```sql
+        SELECT d.denial_reason_name FROM DenialReasons d GROUP BY d.denial_reason_name ORDER BY COUNT(d.denial_reason_code) DESC LIMIT 1;
+        ```
+
+        Error message:
+        Error executing query. Exit status: 1
+Command error output:
+Database error: column d.denial_reason_name does not exist
+LINE 1: SELECT d.denial_reason_name FROM DenialReasons d GROUP BY d....
+
+Hints:
+HINT:  Perhaps you meant to reference the column "d.denial_reason_code".
+
+        
+            Error Type Hint: Column Not Found.
+            Possible Causes:
+            1. Typo in column name (check schema).
+            2. Column exists in a different table than specified (check JOINs and aliases).
+            3. Trying to access a descriptive field (e.g., `denial_reason_name`) from a junction table (e.g., `DenialReasons`) instead of the lookup table (e.g., `DenialReason`). You MUST join to the lookup table.
+            4. Missing table alias or incorrect alias used.
+            Check the original Query Plan/Breakdown for intended logic.
+        
+            Special Note for DenialReasons Queries:
+            1. DenialReasons is a junction table that connects LoanApplication to DenialReason.
+            2. To get denial reason names, you MUST:
+               - Join LoanApplication with DenialReasons using ID
+               - Join DenialReasons with DenialReason using denial_reason_code
+            3. Example join pattern:
+               LoanApplication ⋈ DenialReasons ⋈ DenialReason
+            4. When counting denial reasons, make sure to:
+               - Group by denial_reason_code and denial_reason_name
+               - Count from DenialReasons (not DenialReason)
+        
+
+        Full Database Schema:
+        CREATE TABLE Agency (
+    agency_code SMALLINT PRIMARY KEY,
+    agency_name VARCHAR(100) NOT NULL,
+    agency_abbr VARCHAR(20) NOT NULL
+);
+
+CREATE TABLE LoanType (
+    loan_type SMALLINT PRIMARY KEY,
+    loan_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE PropertyType (
+    property_type SMALLINT PRIMARY KEY,
+    property_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE LoanPurpose (
+    loan_purpose SMALLINT PRIMARY KEY,
+    loan_purpose_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE OwnerOccupancy (
+    owner_occupancy SMALLINT PRIMARY KEY,
+    owner_occupancy_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Preapproval (
+    preapproval SMALLINT PRIMARY KEY,
+    preapproval_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE ActionTaken (
+    action_taken SMALLINT PRIMARY KEY,
+    action_taken_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE MSA (
+    msamd VARCHAR(5) PRIMARY KEY,
+    msamd_name VARCHAR(100)
+);
+
+CREATE TABLE State (
+    state_code CHAR(2) PRIMARY KEY,
+    state_name VARCHAR(100) NOT NULL,
+    state_abbr CHAR(2) NOT NULL
+);
+
+CREATE TABLE County (
+    county_code CHAR(3),
+    state_code CHAR(2),
+    county_name VARCHAR(100) NOT NULL,
+    PRIMARY KEY (county_code, state_code),
+    FOREIGN KEY (state_code) REFERENCES State(state_code)
+);
+
+CREATE TABLE Ethnicity (
+    ethnicity_code SMALLINT PRIMARY KEY,
+    ethnicity_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Race (
+    race_code SMALLINT PRIMARY KEY,
+    race_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Sex (
+    sex_code SMALLINT PRIMARY KEY,
+    sex_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE PurchaserType (
+    purchaser_type SMALLINT PRIMARY KEY,
+    purchaser_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE DenialReason (
+    denial_reason_code SMALLINT PRIMARY KEY,
+    denial_reason_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE HOEPAStatus (
+    hoepa_status SMALLINT PRIMARY KEY,
+    hoepa_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE LienStatus (
+    lien_status SMALLINT PRIMARY KEY,
+    lien_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE EditStatus (
+    edit_status SMALLINT PRIMARY KEY,
+    edit_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Location (
+    location_id SERIAL PRIMARY KEY,
+    msamd VARCHAR(5),
+    state_code CHAR(2),
+    county_code CHAR(3),
+    census_tract_number VARCHAR(8),
+    population INTEGER,
+    minority_population NUMERIC,
+    hud_median_family_income INTEGER,
+    tract_to_msamd_income NUMERIC,
+    number_of_owner_occupied_units INTEGER,
+    number_of_1_to_4_family_units INTEGER,
+    FOREIGN KEY (msamd) REFERENCES MSA(msamd),
+    FOREIGN KEY (state_code) REFERENCES State(state_code),
+    FOREIGN KEY (county_code, state_code) REFERENCES County(county_code, state_code)
+);
+
+CREATE TABLE RespondentAgency (
+    as_of_year INTEGER,
+    respondent_id VARCHAR(10),
+    agency_code SMALLINT,
+    PRIMARY KEY (as_of_year, respondent_id),
+    FOREIGN KEY (agency_code) REFERENCES Agency(agency_code)
+);
+
+CREATE TABLE LoanApplication (
+    ID INTEGER PRIMARY KEY,
+    as_of_year INTEGER NOT NULL,
+    respondent_id VARCHAR(10) NOT NULL,
+    loan_type SMALLINT NOT NULL,
+    property_type SMALLINT NOT NULL,
+    loan_purpose SMALLINT NOT NULL,
+    owner_occupancy SMALLINT NOT NULL,
+    loan_amount_000s NUMERIC,
+    preapproval SMALLINT NOT NULL,
+    action_taken SMALLINT NOT NULL,
+    location_id INTEGER NOT NULL,
+    applicant_ethnicity SMALLINT NOT NULL,
+    co_applicant_ethnicity SMALLINT,
+    applicant_sex SMALLINT NOT NULL,
+    co_applicant_sex SMALLINT,
+    applicant_income_000s NUMERIC,
+    purchaser_type SMALLINT,
+    rate_spread VARCHAR(10),
+    hoepa_status SMALLINT,
+    lien_status SMALLINT,
+    edit_status SMALLINT,
+    sequence_number VARCHAR(20),
+    application_date_indicator SMALLINT,
+    FOREIGN KEY (as_of_year, respondent_id) REFERENCES RespondentAgency(as_of_year, respondent_id),
+    FOREIGN KEY (loan_type) REFERENCES LoanType(loan_type),
+    FOREIGN KEY (property_type) REFERENCES PropertyType(property_type),
+    FOREIGN KEY (loan_purpose) REFERENCES LoanPurpose(loan_purpose),
+    FOREIGN KEY (owner_occupancy) REFERENCES OwnerOccupancy(owner_occupancy),
+    FOREIGN KEY (preapproval) REFERENCES Preapproval(preapproval),
+    FOREIGN KEY (action_taken) REFERENCES ActionTaken(action_taken),
+    FOREIGN KEY (location_id) REFERENCES Location(location_id),
+    FOREIGN KEY (applicant_ethnicity) REFERENCES Ethnicity(ethnicity_code),
+    FOREIGN KEY (co_applicant_ethnicity) REFERENCES Ethnicity(ethnicity_code),
+    FOREIGN KEY (applicant_sex) REFERENCES Sex(sex_code),
+    FOREIGN KEY (co_applicant_sex) REFERENCES Sex(sex_code),
+    FOREIGN KEY (purchaser_type) REFERENCES PurchaserType(purchaser_type),
+    FOREIGN KEY (hoepa_status) REFERENCES HOEPAStatus(hoepa_status),
+    FOREIGN KEY (lien_status) REFERENCES LienStatus(lien_status),
+    FOREIGN KEY (edit_status) REFERENCES EditStatus(edit_status)
+);
+
+CREATE TABLE ApplicantRace (
+    ID INTEGER,
+    race_number SMALLINT,
+    race_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, race_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (race_code) REFERENCES Race(race_code)
+);
+
+CREATE TABLE CoApplicantRace (
+    ID INTEGER,
+    race_number SMALLINT,
+    race_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, race_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (race_code) REFERENCES Race(race_code)
+);
+
+CREATE TABLE DenialReasons (
+    ID INTEGER,
+    reason_number SMALLINT,
+    denial_reason_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, reason_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (denial_reason_code) REFERENCES DenialReason(denial_reason_code)
+);
+
+
+        Corrected SQL query:
+    
+
+--- LLM Correction Response ---
+ SELECT d.denial_reason_name FROM DenialReasons d GROUP BY d.denial_reason_name ORDER BY COUNT(d.denial_reason_code) DESC LIMIT 1;
+
+==================== CORRECTION LOG END (Attempt 1) ======================
+
+
+
+==================== CORRECTION LOG START (Attempt 2) ====================
+Timestamp: 03:37:15 PM 05/05/25
+Question: What is the most common loan denial reason? 
+
+--- Original Query ---
+SELECT d.denial_reason_name FROM DenialReasons d GROUP BY d.denial_reason_name ORDER BY COUNT(d.denial_reason_code) DESC LIMIT 1;
+
+--- Query Plan/Breakdown ---
+ SELECT d.denial_reason_name FROM DenialReasons d GROUP BY d.denial_reason_name ORDER BY COUNT(d.denial_reason_code) DESC LIMIT 1;
+
+--- Failed Query (Attempt {correction_attempts}) ---
+SELECT d.denial_reason_name FROM DenialReasons d GROUP BY d.denial_reason_name ORDER BY COUNT(d.denial_reason_code) DESC LIMIT 1;
+
+--- Error Message ---
+Error executing query. Exit status: 1
+Command error output:
+Database error: column d.denial_reason_name does not exist
+LINE 1: SELECT d.denial_reason_name FROM DenialReasons d GROUP BY d....
+
+Hints:
+HINT:  Perhaps you meant to reference the column "d.denial_reason_code".
+
+--- Correction Prompt ---
+
+        Fix the SQL query based on the error, original plan, and schema. Pay special attention to the hint in the error message if there is one.
+
+        Instructions:
+        1. Fix the SQL query based on the error message and hints.
+        2. Compare Failed SQL to the Original Plan and Schema.
+        3. Ensure all necessary tables are properly joined, especially for junction tables.
+        4. Use proper table aliases and qualify all column references.
+        5. Maintain the original query's intent as shown in the plan.
+        6. Output only the corrected SQL query, no explanations.
+
+        Original question: What is the most common loan denial reason? 
+
+        Original Plan:
+         SELECT d.denial_reason_name FROM DenialReasons d GROUP BY d.denial_reason_name ORDER BY COUNT(d.denial_reason_code) DESC LIMIT 1;
+
+        Failed SQL query:
+        ```sql
+        SELECT d.denial_reason_name FROM DenialReasons d GROUP BY d.denial_reason_name ORDER BY COUNT(d.denial_reason_code) DESC LIMIT 1;
+        ```
+
+        Error message:
+        Error executing query. Exit status: 1
+Command error output:
+Database error: column d.denial_reason_name does not exist
+LINE 1: SELECT d.denial_reason_name FROM DenialReasons d GROUP BY d....
+
+Hints:
+HINT:  Perhaps you meant to reference the column "d.denial_reason_code".
+
+        
+            Error Type Hint: Column Not Found.
+            Possible Causes:
+            1. Typo in column name (check schema).
+            2. Column exists in a different table than specified (check JOINs and aliases).
+            3. Trying to access a descriptive field (e.g., `denial_reason_name`) from a junction table (e.g., `DenialReasons`) instead of the lookup table (e.g., `DenialReason`). You MUST join to the lookup table.
+            4. Missing table alias or incorrect alias used.
+            Check the original Query Plan/Breakdown for intended logic.
+        
+            Special Note for DenialReasons Queries:
+            1. DenialReasons is a junction table that connects LoanApplication to DenialReason.
+            2. To get denial reason names, you MUST:
+               - Join LoanApplication with DenialReasons using ID
+               - Join DenialReasons with DenialReason using denial_reason_code
+            3. Example join pattern:
+               LoanApplication ⋈ DenialReasons ⋈ DenialReason
+            4. When counting denial reasons, make sure to:
+               - Group by denial_reason_code and denial_reason_name
+               - Count from DenialReasons (not DenialReason)
+        
+
+        Full Database Schema:
+        CREATE TABLE Agency (
+    agency_code SMALLINT PRIMARY KEY,
+    agency_name VARCHAR(100) NOT NULL,
+    agency_abbr VARCHAR(20) NOT NULL
+);
+
+CREATE TABLE LoanType (
+    loan_type SMALLINT PRIMARY KEY,
+    loan_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE PropertyType (
+    property_type SMALLINT PRIMARY KEY,
+    property_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE LoanPurpose (
+    loan_purpose SMALLINT PRIMARY KEY,
+    loan_purpose_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE OwnerOccupancy (
+    owner_occupancy SMALLINT PRIMARY KEY,
+    owner_occupancy_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Preapproval (
+    preapproval SMALLINT PRIMARY KEY,
+    preapproval_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE ActionTaken (
+    action_taken SMALLINT PRIMARY KEY,
+    action_taken_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE MSA (
+    msamd VARCHAR(5) PRIMARY KEY,
+    msamd_name VARCHAR(100)
+);
+
+CREATE TABLE State (
+    state_code CHAR(2) PRIMARY KEY,
+    state_name VARCHAR(100) NOT NULL,
+    state_abbr CHAR(2) NOT NULL
+);
+
+CREATE TABLE County (
+    county_code CHAR(3),
+    state_code CHAR(2),
+    county_name VARCHAR(100) NOT NULL,
+    PRIMARY KEY (county_code, state_code),
+    FOREIGN KEY (state_code) REFERENCES State(state_code)
+);
+
+CREATE TABLE Ethnicity (
+    ethnicity_code SMALLINT PRIMARY KEY,
+    ethnicity_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Race (
+    race_code SMALLINT PRIMARY KEY,
+    race_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Sex (
+    sex_code SMALLINT PRIMARY KEY,
+    sex_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE PurchaserType (
+    purchaser_type SMALLINT PRIMARY KEY,
+    purchaser_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE DenialReason (
+    denial_reason_code SMALLINT PRIMARY KEY,
+    denial_reason_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE HOEPAStatus (
+    hoepa_status SMALLINT PRIMARY KEY,
+    hoepa_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE LienStatus (
+    lien_status SMALLINT PRIMARY KEY,
+    lien_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE EditStatus (
+    edit_status SMALLINT PRIMARY KEY,
+    edit_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Location (
+    location_id SERIAL PRIMARY KEY,
+    msamd VARCHAR(5),
+    state_code CHAR(2),
+    county_code CHAR(3),
+    census_tract_number VARCHAR(8),
+    population INTEGER,
+    minority_population NUMERIC,
+    hud_median_family_income INTEGER,
+    tract_to_msamd_income NUMERIC,
+    number_of_owner_occupied_units INTEGER,
+    number_of_1_to_4_family_units INTEGER,
+    FOREIGN KEY (msamd) REFERENCES MSA(msamd),
+    FOREIGN KEY (state_code) REFERENCES State(state_code),
+    FOREIGN KEY (county_code, state_code) REFERENCES County(county_code, state_code)
+);
+
+CREATE TABLE RespondentAgency (
+    as_of_year INTEGER,
+    respondent_id VARCHAR(10),
+    agency_code SMALLINT,
+    PRIMARY KEY (as_of_year, respondent_id),
+    FOREIGN KEY (agency_code) REFERENCES Agency(agency_code)
+);
+
+CREATE TABLE LoanApplication (
+    ID INTEGER PRIMARY KEY,
+    as_of_year INTEGER NOT NULL,
+    respondent_id VARCHAR(10) NOT NULL,
+    loan_type SMALLINT NOT NULL,
+    property_type SMALLINT NOT NULL,
+    loan_purpose SMALLINT NOT NULL,
+    owner_occupancy SMALLINT NOT NULL,
+    loan_amount_000s NUMERIC,
+    preapproval SMALLINT NOT NULL,
+    action_taken SMALLINT NOT NULL,
+    location_id INTEGER NOT NULL,
+    applicant_ethnicity SMALLINT NOT NULL,
+    co_applicant_ethnicity SMALLINT,
+    applicant_sex SMALLINT NOT NULL,
+    co_applicant_sex SMALLINT,
+    applicant_income_000s NUMERIC,
+    purchaser_type SMALLINT,
+    rate_spread VARCHAR(10),
+    hoepa_status SMALLINT,
+    lien_status SMALLINT,
+    edit_status SMALLINT,
+    sequence_number VARCHAR(20),
+    application_date_indicator SMALLINT,
+    FOREIGN KEY (as_of_year, respondent_id) REFERENCES RespondentAgency(as_of_year, respondent_id),
+    FOREIGN KEY (loan_type) REFERENCES LoanType(loan_type),
+    FOREIGN KEY (property_type) REFERENCES PropertyType(property_type),
+    FOREIGN KEY (loan_purpose) REFERENCES LoanPurpose(loan_purpose),
+    FOREIGN KEY (owner_occupancy) REFERENCES OwnerOccupancy(owner_occupancy),
+    FOREIGN KEY (preapproval) REFERENCES Preapproval(preapproval),
+    FOREIGN KEY (action_taken) REFERENCES ActionTaken(action_taken),
+    FOREIGN KEY (location_id) REFERENCES Location(location_id),
+    FOREIGN KEY (applicant_ethnicity) REFERENCES Ethnicity(ethnicity_code),
+    FOREIGN KEY (co_applicant_ethnicity) REFERENCES Ethnicity(ethnicity_code),
+    FOREIGN KEY (applicant_sex) REFERENCES Sex(sex_code),
+    FOREIGN KEY (co_applicant_sex) REFERENCES Sex(sex_code),
+    FOREIGN KEY (purchaser_type) REFERENCES PurchaserType(purchaser_type),
+    FOREIGN KEY (hoepa_status) REFERENCES HOEPAStatus(hoepa_status),
+    FOREIGN KEY (lien_status) REFERENCES LienStatus(lien_status),
+    FOREIGN KEY (edit_status) REFERENCES EditStatus(edit_status)
+);
+
+CREATE TABLE ApplicantRace (
+    ID INTEGER,
+    race_number SMALLINT,
+    race_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, race_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (race_code) REFERENCES Race(race_code)
+);
+
+CREATE TABLE CoApplicantRace (
+    ID INTEGER,
+    race_number SMALLINT,
+    race_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, race_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (race_code) REFERENCES Race(race_code)
+);
+
+CREATE TABLE DenialReasons (
+    ID INTEGER,
+    reason_number SMALLINT,
+    denial_reason_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, reason_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (denial_reason_code) REFERENCES DenialReason(denial_reason_code)
+);
+
+
+        Corrected SQL query:
+    
+
+--- LLM Correction Response ---
+ SELECT d.denial_reason_name FROM DenialReasons d GROUP BY d.denial_reason_name ORDER BY COUNT(d.denial_reason_code) DESC LIMIT 1;
+
+==================== CORRECTION LOG END (Attempt 2) ======================
+
+
+
+==================== CORRECTION LOG START (Attempt 1) ====================
+Timestamp: 03:46:53 PM 05/05/25
+Question: What is the most common loan denial reason? 
+
+--- Original Query ---
+SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons d WHERE d.denial_reason_name != 'None' GROUP BY d.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+
+--- Query Plan/Breakdown ---
+γ(denial_reason_name, COUNT(*))(σ denial_reason_name ≠ 'None' (DenialReasons ⨝ LoanApplication))
+
+TOP(1, 1)(γ(denial_reason_name, COUNT(*)))
+
+This expression first groups the LoanApplication table with the DenialReasons table based on the denial_reason_name, then counts the occurrences of each denial reason name where it is not 'None'. Finally, it takes the top 1 result, which is the most common denial reason.
+
+Note: This expression assumes that the 'None' value is used to indicate no denial reason. If there are multiple most common reasons, this expression will only return one of them. To get all the most common reasons, additional processing might be needed.
+
+--- Failed Query (Attempt {correction_attempts}) ---
+SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons d WHERE d.denial_reason_name != 'None' GROUP BY d.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+
+--- Error Message ---
+Error executing query. Exit status: 1
+Command error output:
+Database error: column d.denial_reason_name does not exist
+LINE 1: SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialRe...
+
+Hints:
+HINT:  Perhaps you meant to reference the column "d.denial_reason_code".
+
+--- Correction Prompt ---
+
+        Fix the SQL query based on the error, original plan, and schema. Pay special attention to the hint in the error message if there is one.
+
+        Instructions:
+        1. Fix the SQL query based on the error message and hints.
+        2. Compare Failed SQL to the Original Plan and Schema.
+        3. Ensure all necessary tables are properly joined, especially for junction tables.
+        4. Use proper table aliases and qualify all column references.
+        5. Maintain the original query's intent as shown in the plan.
+        6. Output only the corrected SQL query, no explanations.
+
+        Original question: What is the most common loan denial reason? 
+
+        Original Plan:
+        γ(denial_reason_name, COUNT(*))(σ denial_reason_name ≠ 'None' (DenialReasons ⨝ LoanApplication))
+
+TOP(1, 1)(γ(denial_reason_name, COUNT(*)))
+
+This expression first groups the LoanApplication table with the DenialReasons table based on the denial_reason_name, then counts the occurrences of each denial reason name where it is not 'None'. Finally, it takes the top 1 result, which is the most common denial reason.
+
+Note: This expression assumes that the 'None' value is used to indicate no denial reason. If there are multiple most common reasons, this expression will only return one of them. To get all the most common reasons, additional processing might be needed.
+
+        Failed SQL query:
+        ```sql
+        SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons d WHERE d.denial_reason_name != 'None' GROUP BY d.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+        ```
+
+        Error message:
+        Error executing query. Exit status: 1
+Command error output:
+Database error: column d.denial_reason_name does not exist
+LINE 1: SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialRe...
+
+Hints:
+HINT:  Perhaps you meant to reference the column "d.denial_reason_code".
+
+        
+            Error Type Hint: Column Not Found.
+            Possible Causes:
+            1. Typo in column name (check schema).
+            2. Column exists in a different table than specified (check JOINs and aliases).
+            3. Trying to access a descriptive field (e.g., `denial_reason_name`) from a junction table (e.g., `DenialReasons`) instead of the lookup table (e.g., `DenialReason`). You MUST join to the lookup table.
+            4. Missing table alias or incorrect alias used.
+            Check the original Query Plan/Breakdown for intended logic.
+        
+            Special Note for DenialReasons Queries:
+            1. DenialReasons is a junction table that connects LoanApplication to DenialReason.
+            2. To get denial reason names, you MUST:
+               - Join LoanApplication with DenialReasons using ID
+               - Join DenialReasons with DenialReason using denial_reason_code
+            3. Example join pattern:
+               LoanApplication ⋈ DenialReasons ⋈ DenialReason
+            4. When counting denial reasons, make sure to:
+               - Group by denial_reason_code and denial_reason_name
+               - Count from DenialReasons (not DenialReason)
+        
+
+        Full Database Schema:
+        CREATE TABLE Agency (
+    agency_code SMALLINT PRIMARY KEY,
+    agency_name VARCHAR(100) NOT NULL,
+    agency_abbr VARCHAR(20) NOT NULL
+);
+
+CREATE TABLE LoanType (
+    loan_type SMALLINT PRIMARY KEY,
+    loan_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE PropertyType (
+    property_type SMALLINT PRIMARY KEY,
+    property_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE LoanPurpose (
+    loan_purpose SMALLINT PRIMARY KEY,
+    loan_purpose_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE OwnerOccupancy (
+    owner_occupancy SMALLINT PRIMARY KEY,
+    owner_occupancy_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Preapproval (
+    preapproval SMALLINT PRIMARY KEY,
+    preapproval_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE ActionTaken (
+    action_taken SMALLINT PRIMARY KEY,
+    action_taken_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE MSA (
+    msamd VARCHAR(5) PRIMARY KEY,
+    msamd_name VARCHAR(100)
+);
+
+CREATE TABLE State (
+    state_code CHAR(2) PRIMARY KEY,
+    state_name VARCHAR(100) NOT NULL,
+    state_abbr CHAR(2) NOT NULL
+);
+
+CREATE TABLE County (
+    county_code CHAR(3),
+    state_code CHAR(2),
+    county_name VARCHAR(100) NOT NULL,
+    PRIMARY KEY (county_code, state_code),
+    FOREIGN KEY (state_code) REFERENCES State(state_code)
+);
+
+CREATE TABLE Ethnicity (
+    ethnicity_code SMALLINT PRIMARY KEY,
+    ethnicity_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Race (
+    race_code SMALLINT PRIMARY KEY,
+    race_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Sex (
+    sex_code SMALLINT PRIMARY KEY,
+    sex_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE PurchaserType (
+    purchaser_type SMALLINT PRIMARY KEY,
+    purchaser_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE DenialReason (
+    denial_reason_code SMALLINT PRIMARY KEY,
+    denial_reason_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE HOEPAStatus (
+    hoepa_status SMALLINT PRIMARY KEY,
+    hoepa_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE LienStatus (
+    lien_status SMALLINT PRIMARY KEY,
+    lien_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE EditStatus (
+    edit_status SMALLINT PRIMARY KEY,
+    edit_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Location (
+    location_id SERIAL PRIMARY KEY,
+    msamd VARCHAR(5),
+    state_code CHAR(2),
+    county_code CHAR(3),
+    census_tract_number VARCHAR(8),
+    population INTEGER,
+    minority_population NUMERIC,
+    hud_median_family_income INTEGER,
+    tract_to_msamd_income NUMERIC,
+    number_of_owner_occupied_units INTEGER,
+    number_of_1_to_4_family_units INTEGER,
+    FOREIGN KEY (msamd) REFERENCES MSA(msamd),
+    FOREIGN KEY (state_code) REFERENCES State(state_code),
+    FOREIGN KEY (county_code, state_code) REFERENCES County(county_code, state_code)
+);
+
+CREATE TABLE RespondentAgency (
+    as_of_year INTEGER,
+    respondent_id VARCHAR(10),
+    agency_code SMALLINT,
+    PRIMARY KEY (as_of_year, respondent_id),
+    FOREIGN KEY (agency_code) REFERENCES Agency(agency_code)
+);
+
+CREATE TABLE LoanApplication (
+    ID INTEGER PRIMARY KEY,
+    as_of_year INTEGER NOT NULL,
+    respondent_id VARCHAR(10) NOT NULL,
+    loan_type SMALLINT NOT NULL,
+    property_type SMALLINT NOT NULL,
+    loan_purpose SMALLINT NOT NULL,
+    owner_occupancy SMALLINT NOT NULL,
+    loan_amount_000s NUMERIC,
+    preapproval SMALLINT NOT NULL,
+    action_taken SMALLINT NOT NULL,
+    location_id INTEGER NOT NULL,
+    applicant_ethnicity SMALLINT NOT NULL,
+    co_applicant_ethnicity SMALLINT,
+    applicant_sex SMALLINT NOT NULL,
+    co_applicant_sex SMALLINT,
+    applicant_income_000s NUMERIC,
+    purchaser_type SMALLINT,
+    rate_spread VARCHAR(10),
+    hoepa_status SMALLINT,
+    lien_status SMALLINT,
+    edit_status SMALLINT,
+    sequence_number VARCHAR(20),
+    application_date_indicator SMALLINT,
+    FOREIGN KEY (as_of_year, respondent_id) REFERENCES RespondentAgency(as_of_year, respondent_id),
+    FOREIGN KEY (loan_type) REFERENCES LoanType(loan_type),
+    FOREIGN KEY (property_type) REFERENCES PropertyType(property_type),
+    FOREIGN KEY (loan_purpose) REFERENCES LoanPurpose(loan_purpose),
+    FOREIGN KEY (owner_occupancy) REFERENCES OwnerOccupancy(owner_occupancy),
+    FOREIGN KEY (preapproval) REFERENCES Preapproval(preapproval),
+    FOREIGN KEY (action_taken) REFERENCES ActionTaken(action_taken),
+    FOREIGN KEY (location_id) REFERENCES Location(location_id),
+    FOREIGN KEY (applicant_ethnicity) REFERENCES Ethnicity(ethnicity_code),
+    FOREIGN KEY (co_applicant_ethnicity) REFERENCES Ethnicity(ethnicity_code),
+    FOREIGN KEY (applicant_sex) REFERENCES Sex(sex_code),
+    FOREIGN KEY (co_applicant_sex) REFERENCES Sex(sex_code),
+    FOREIGN KEY (purchaser_type) REFERENCES PurchaserType(purchaser_type),
+    FOREIGN KEY (hoepa_status) REFERENCES HOEPAStatus(hoepa_status),
+    FOREIGN KEY (lien_status) REFERENCES LienStatus(lien_status),
+    FOREIGN KEY (edit_status) REFERENCES EditStatus(edit_status)
+);
+
+CREATE TABLE ApplicantRace (
+    ID INTEGER,
+    race_number SMALLINT,
+    race_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, race_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (race_code) REFERENCES Race(race_code)
+);
+
+CREATE TABLE CoApplicantRace (
+    ID INTEGER,
+    race_number SMALLINT,
+    race_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, race_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (race_code) REFERENCES Race(race_code)
+);
+
+CREATE TABLE DenialReasons (
+    ID INTEGER,
+    reason_number SMALLINT,
+    denial_reason_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, reason_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (denial_reason_code) REFERENCES DenialReason(denial_reason_code)
+);
+
+
+        Corrected SQL query:
+    
+
+--- LLM Correction Response ---
+ SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons d WHERE d.denial_reason_name != 'None' GROUP BY d.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+
+==================== CORRECTION LOG END (Attempt 1) ======================
+
+
+
+==================== CORRECTION LOG START (Attempt 2) ====================
+Timestamp: 03:46:53 PM 05/05/25
+Question: What is the most common loan denial reason? 
+
+--- Original Query ---
+SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons d WHERE d.denial_reason_name != 'None' GROUP BY d.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+
+--- Query Plan/Breakdown ---
+γ(denial_reason_name, COUNT(*))(σ denial_reason_name ≠ 'None' (DenialReasons ⨝ LoanApplication))
+
+TOP(1, 1)(γ(denial_reason_name, COUNT(*)))
+
+This expression first groups the LoanApplication table with the DenialReasons table based on the denial_reason_name, then counts the occurrences of each denial reason name where it is not 'None'. Finally, it takes the top 1 result, which is the most common denial reason.
+
+Note: This expression assumes that the 'None' value is used to indicate no denial reason. If there are multiple most common reasons, this expression will only return one of them. To get all the most common reasons, additional processing might be needed.
+
+--- Failed Query (Attempt {correction_attempts}) ---
+SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons d WHERE d.denial_reason_name != 'None' GROUP BY d.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+
+--- Error Message ---
+Error executing query. Exit status: 1
+Command error output:
+Database error: column d.denial_reason_name does not exist
+LINE 1: SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialRe...
+
+Hints:
+HINT:  Perhaps you meant to reference the column "d.denial_reason_code".
+
+--- Correction Prompt ---
+
+        Fix the SQL query based on the error, original plan, and schema. Pay special attention to the hint in the error message if there is one.
+
+        Instructions:
+        1. Fix the SQL query based on the error message and hints.
+        2. Compare Failed SQL to the Original Plan and Schema.
+        3. Ensure all necessary tables are properly joined, especially for junction tables.
+        4. Use proper table aliases and qualify all column references.
+        5. Maintain the original query's intent as shown in the plan.
+        6. Output only the corrected SQL query, no explanations.
+
+        Original question: What is the most common loan denial reason? 
+
+        Original Plan:
+        γ(denial_reason_name, COUNT(*))(σ denial_reason_name ≠ 'None' (DenialReasons ⨝ LoanApplication))
+
+TOP(1, 1)(γ(denial_reason_name, COUNT(*)))
+
+This expression first groups the LoanApplication table with the DenialReasons table based on the denial_reason_name, then counts the occurrences of each denial reason name where it is not 'None'. Finally, it takes the top 1 result, which is the most common denial reason.
+
+Note: This expression assumes that the 'None' value is used to indicate no denial reason. If there are multiple most common reasons, this expression will only return one of them. To get all the most common reasons, additional processing might be needed.
+
+        Failed SQL query:
+        ```sql
+        SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons d WHERE d.denial_reason_name != 'None' GROUP BY d.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+        ```
+
+        Error message:
+        Error executing query. Exit status: 1
+Command error output:
+Database error: column d.denial_reason_name does not exist
+LINE 1: SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialRe...
+
+Hints:
+HINT:  Perhaps you meant to reference the column "d.denial_reason_code".
+
+        
+            Error Type Hint: Column Not Found.
+            Possible Causes:
+            1. Typo in column name (check schema).
+            2. Column exists in a different table than specified (check JOINs and aliases).
+            3. Trying to access a descriptive field (e.g., `denial_reason_name`) from a junction table (e.g., `DenialReasons`) instead of the lookup table (e.g., `DenialReason`). You MUST join to the lookup table.
+            4. Missing table alias or incorrect alias used.
+            Check the original Query Plan/Breakdown for intended logic.
+        
+            Special Note for DenialReasons Queries:
+            1. DenialReasons is a junction table that connects LoanApplication to DenialReason.
+            2. To get denial reason names, you MUST:
+               - Join LoanApplication with DenialReasons using ID
+               - Join DenialReasons with DenialReason using denial_reason_code
+            3. Example join pattern:
+               LoanApplication ⋈ DenialReasons ⋈ DenialReason
+            4. When counting denial reasons, make sure to:
+               - Group by denial_reason_code and denial_reason_name
+               - Count from DenialReasons (not DenialReason)
+        
+
+        Full Database Schema:
+        CREATE TABLE Agency (
+    agency_code SMALLINT PRIMARY KEY,
+    agency_name VARCHAR(100) NOT NULL,
+    agency_abbr VARCHAR(20) NOT NULL
+);
+
+CREATE TABLE LoanType (
+    loan_type SMALLINT PRIMARY KEY,
+    loan_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE PropertyType (
+    property_type SMALLINT PRIMARY KEY,
+    property_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE LoanPurpose (
+    loan_purpose SMALLINT PRIMARY KEY,
+    loan_purpose_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE OwnerOccupancy (
+    owner_occupancy SMALLINT PRIMARY KEY,
+    owner_occupancy_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Preapproval (
+    preapproval SMALLINT PRIMARY KEY,
+    preapproval_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE ActionTaken (
+    action_taken SMALLINT PRIMARY KEY,
+    action_taken_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE MSA (
+    msamd VARCHAR(5) PRIMARY KEY,
+    msamd_name VARCHAR(100)
+);
+
+CREATE TABLE State (
+    state_code CHAR(2) PRIMARY KEY,
+    state_name VARCHAR(100) NOT NULL,
+    state_abbr CHAR(2) NOT NULL
+);
+
+CREATE TABLE County (
+    county_code CHAR(3),
+    state_code CHAR(2),
+    county_name VARCHAR(100) NOT NULL,
+    PRIMARY KEY (county_code, state_code),
+    FOREIGN KEY (state_code) REFERENCES State(state_code)
+);
+
+CREATE TABLE Ethnicity (
+    ethnicity_code SMALLINT PRIMARY KEY,
+    ethnicity_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Race (
+    race_code SMALLINT PRIMARY KEY,
+    race_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Sex (
+    sex_code SMALLINT PRIMARY KEY,
+    sex_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE PurchaserType (
+    purchaser_type SMALLINT PRIMARY KEY,
+    purchaser_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE DenialReason (
+    denial_reason_code SMALLINT PRIMARY KEY,
+    denial_reason_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE HOEPAStatus (
+    hoepa_status SMALLINT PRIMARY KEY,
+    hoepa_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE LienStatus (
+    lien_status SMALLINT PRIMARY KEY,
+    lien_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE EditStatus (
+    edit_status SMALLINT PRIMARY KEY,
+    edit_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Location (
+    location_id SERIAL PRIMARY KEY,
+    msamd VARCHAR(5),
+    state_code CHAR(2),
+    county_code CHAR(3),
+    census_tract_number VARCHAR(8),
+    population INTEGER,
+    minority_population NUMERIC,
+    hud_median_family_income INTEGER,
+    tract_to_msamd_income NUMERIC,
+    number_of_owner_occupied_units INTEGER,
+    number_of_1_to_4_family_units INTEGER,
+    FOREIGN KEY (msamd) REFERENCES MSA(msamd),
+    FOREIGN KEY (state_code) REFERENCES State(state_code),
+    FOREIGN KEY (county_code, state_code) REFERENCES County(county_code, state_code)
+);
+
+CREATE TABLE RespondentAgency (
+    as_of_year INTEGER,
+    respondent_id VARCHAR(10),
+    agency_code SMALLINT,
+    PRIMARY KEY (as_of_year, respondent_id),
+    FOREIGN KEY (agency_code) REFERENCES Agency(agency_code)
+);
+
+CREATE TABLE LoanApplication (
+    ID INTEGER PRIMARY KEY,
+    as_of_year INTEGER NOT NULL,
+    respondent_id VARCHAR(10) NOT NULL,
+    loan_type SMALLINT NOT NULL,
+    property_type SMALLINT NOT NULL,
+    loan_purpose SMALLINT NOT NULL,
+    owner_occupancy SMALLINT NOT NULL,
+    loan_amount_000s NUMERIC,
+    preapproval SMALLINT NOT NULL,
+    action_taken SMALLINT NOT NULL,
+    location_id INTEGER NOT NULL,
+    applicant_ethnicity SMALLINT NOT NULL,
+    co_applicant_ethnicity SMALLINT,
+    applicant_sex SMALLINT NOT NULL,
+    co_applicant_sex SMALLINT,
+    applicant_income_000s NUMERIC,
+    purchaser_type SMALLINT,
+    rate_spread VARCHAR(10),
+    hoepa_status SMALLINT,
+    lien_status SMALLINT,
+    edit_status SMALLINT,
+    sequence_number VARCHAR(20),
+    application_date_indicator SMALLINT,
+    FOREIGN KEY (as_of_year, respondent_id) REFERENCES RespondentAgency(as_of_year, respondent_id),
+    FOREIGN KEY (loan_type) REFERENCES LoanType(loan_type),
+    FOREIGN KEY (property_type) REFERENCES PropertyType(property_type),
+    FOREIGN KEY (loan_purpose) REFERENCES LoanPurpose(loan_purpose),
+    FOREIGN KEY (owner_occupancy) REFERENCES OwnerOccupancy(owner_occupancy),
+    FOREIGN KEY (preapproval) REFERENCES Preapproval(preapproval),
+    FOREIGN KEY (action_taken) REFERENCES ActionTaken(action_taken),
+    FOREIGN KEY (location_id) REFERENCES Location(location_id),
+    FOREIGN KEY (applicant_ethnicity) REFERENCES Ethnicity(ethnicity_code),
+    FOREIGN KEY (co_applicant_ethnicity) REFERENCES Ethnicity(ethnicity_code),
+    FOREIGN KEY (applicant_sex) REFERENCES Sex(sex_code),
+    FOREIGN KEY (co_applicant_sex) REFERENCES Sex(sex_code),
+    FOREIGN KEY (purchaser_type) REFERENCES PurchaserType(purchaser_type),
+    FOREIGN KEY (hoepa_status) REFERENCES HOEPAStatus(hoepa_status),
+    FOREIGN KEY (lien_status) REFERENCES LienStatus(lien_status),
+    FOREIGN KEY (edit_status) REFERENCES EditStatus(edit_status)
+);
+
+CREATE TABLE ApplicantRace (
+    ID INTEGER,
+    race_number SMALLINT,
+    race_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, race_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (race_code) REFERENCES Race(race_code)
+);
+
+CREATE TABLE CoApplicantRace (
+    ID INTEGER,
+    race_number SMALLINT,
+    race_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, race_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (race_code) REFERENCES Race(race_code)
+);
+
+CREATE TABLE DenialReasons (
+    ID INTEGER,
+    reason_number SMALLINT,
+    denial_reason_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, reason_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (denial_reason_code) REFERENCES DenialReason(denial_reason_code)
+);
+
+
+        Corrected SQL query:
+    
+
+--- LLM Correction Response ---
+  SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons d WHERE d.denial_reason_name != 'None' GROUP BY d.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+
+==================== CORRECTION LOG END (Attempt 2) ======================
+
+
+
+==================== CORRECTION LOG START (Attempt 1) ====================
+Timestamp: 04:02:03 PM 05/05/25
+Question: What is the most common loan denial reason? 
+
+--- Original Query ---
+SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons d WHERE d.denial_reason_name != 'None' GROUP BY d.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+
+--- Query Plan/Breakdown ---
+γ(denial_reason_name, COUNT(*))(σ denial_reason_name ≠ 'None' (DenialReasons ⨝ LoanApplication))
+
+TOP(1, 1)(γ(denial_reason_name, COUNT(*)))
+
+This expression first groups the LoanApplication table with the DenialReasons table based on the denial_reason_name, then counts the occurrences of each denial reason name where it is not 'None'. Finally, it takes the top 1 result, which is the most common denial reason.
+
+Note: This expression assumes that the 'None' value is used to indicate no denial reason. If there are multiple most common reasons, this expression will only return one of them. To get all the most common reasons, additional processing might be needed.
+
+--- Failed Query (Attempt {correction_attempts}) ---
+SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons d WHERE d.denial_reason_name != 'None' GROUP BY d.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+
+--- Error Message ---
+Error executing query. Exit status: 1
+Command error output:
+Database error: column d.denial_reason_name does not exist
+LINE 1: SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialRe...
+
+Hints:
+HINT:  Perhaps you meant to reference the column "d.denial_reason_code".
+
+--- Correction Prompt ---
+
+        Fix the SQL query based on the error, original plan, and schema. Pay special attention to the hint in the error message if there is one.
+
+        Instructions:
+        1. Fix the SQL query based on the error message and hints.
+        2. Compare Failed SQL to the Original Plan and Schema.
+        3. Ensure all necessary tables are properly joined, especially for junction tables.
+        4. Use proper table aliases and qualify all column references.
+        5. Maintain the original query's intent as shown in the plan.
+        6. Output only the corrected SQL query, no explanations.
+
+        Original question: What is the most common loan denial reason? 
+
+        Original Plan:
+        γ(denial_reason_name, COUNT(*))(σ denial_reason_name ≠ 'None' (DenialReasons ⨝ LoanApplication))
+
+TOP(1, 1)(γ(denial_reason_name, COUNT(*)))
+
+This expression first groups the LoanApplication table with the DenialReasons table based on the denial_reason_name, then counts the occurrences of each denial reason name where it is not 'None'. Finally, it takes the top 1 result, which is the most common denial reason.
+
+Note: This expression assumes that the 'None' value is used to indicate no denial reason. If there are multiple most common reasons, this expression will only return one of them. To get all the most common reasons, additional processing might be needed.
+
+        Failed SQL query:
+        ```sql
+        SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons d WHERE d.denial_reason_name != 'None' GROUP BY d.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+        ```
+
+        Error message:
+        Error executing query. Exit status: 1
+Command error output:
+Database error: column d.denial_reason_name does not exist
+LINE 1: SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialRe...
+
+Hints:
+HINT:  Perhaps you meant to reference the column "d.denial_reason_code".
+
+        
+            Error Type Hint: Column Not Found.
+            Possible Causes:
+            1. Typo in column name (check schema).
+            2. Column exists in a different table than specified (check JOINs and aliases).
+            3. Trying to access a descriptive field (e.g., `denial_reason_name`) from a junction table (e.g., `DenialReasons`) instead of the lookup table (e.g., `DenialReason`). You MUST join to the lookup table.
+            4. Missing table alias or incorrect alias used.
+            Check the original Query Plan/Breakdown for intended logic.
+        
+            Special Note for DenialReasons Queries:
+            1. DenialReasons is a junction table that connects LoanApplication to DenialReason.
+            2. The table structure is:
+               - DenialReasons: (ID, reason_number, denial_reason_code)
+               - DenialReason: (denial_reason_code, denial_reason_name)
+            3. To get denial reason names, you MUST:
+               - Join DenialReasons with DenialReason using denial_reason_code
+               - Access denial_reason_name from DenialReason table, NOT DenialReasons
+            4. Example correct query structure:
+               ```sql
+               SELECT dr.denial_reason_name, COUNT(*) as count
+               FROM DenialReasons d
+               JOIN DenialReason dr ON d.denial_reason_code = dr.denial_reason_code
+               GROUP BY dr.denial_reason_name
+               ORDER BY count DESC
+               ```
+            5. Common mistakes to avoid:
+               - Trying to access denial_reason_name from DenialReasons table (it doesn't exist there)
+               - Missing the join with DenialReason table
+               - Using wrong join conditions
+        
+
+        Full Database Schema:
+        CREATE TABLE Agency (
+    agency_code SMALLINT PRIMARY KEY,
+    agency_name VARCHAR(100) NOT NULL,
+    agency_abbr VARCHAR(20) NOT NULL
+);
+
+CREATE TABLE LoanType (
+    loan_type SMALLINT PRIMARY KEY,
+    loan_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE PropertyType (
+    property_type SMALLINT PRIMARY KEY,
+    property_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE LoanPurpose (
+    loan_purpose SMALLINT PRIMARY KEY,
+    loan_purpose_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE OwnerOccupancy (
+    owner_occupancy SMALLINT PRIMARY KEY,
+    owner_occupancy_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Preapproval (
+    preapproval SMALLINT PRIMARY KEY,
+    preapproval_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE ActionTaken (
+    action_taken SMALLINT PRIMARY KEY,
+    action_taken_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE MSA (
+    msamd VARCHAR(5) PRIMARY KEY,
+    msamd_name VARCHAR(100)
+);
+
+CREATE TABLE State (
+    state_code CHAR(2) PRIMARY KEY,
+    state_name VARCHAR(100) NOT NULL,
+    state_abbr CHAR(2) NOT NULL
+);
+
+CREATE TABLE County (
+    county_code CHAR(3),
+    state_code CHAR(2),
+    county_name VARCHAR(100) NOT NULL,
+    PRIMARY KEY (county_code, state_code),
+    FOREIGN KEY (state_code) REFERENCES State(state_code)
+);
+
+CREATE TABLE Ethnicity (
+    ethnicity_code SMALLINT PRIMARY KEY,
+    ethnicity_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Race (
+    race_code SMALLINT PRIMARY KEY,
+    race_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Sex (
+    sex_code SMALLINT PRIMARY KEY,
+    sex_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE PurchaserType (
+    purchaser_type SMALLINT PRIMARY KEY,
+    purchaser_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE DenialReason (
+    denial_reason_code SMALLINT PRIMARY KEY,
+    denial_reason_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE HOEPAStatus (
+    hoepa_status SMALLINT PRIMARY KEY,
+    hoepa_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE LienStatus (
+    lien_status SMALLINT PRIMARY KEY,
+    lien_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE EditStatus (
+    edit_status SMALLINT PRIMARY KEY,
+    edit_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Location (
+    location_id SERIAL PRIMARY KEY,
+    msamd VARCHAR(5),
+    state_code CHAR(2),
+    county_code CHAR(3),
+    census_tract_number VARCHAR(8),
+    population INTEGER,
+    minority_population NUMERIC,
+    hud_median_family_income INTEGER,
+    tract_to_msamd_income NUMERIC,
+    number_of_owner_occupied_units INTEGER,
+    number_of_1_to_4_family_units INTEGER,
+    FOREIGN KEY (msamd) REFERENCES MSA(msamd),
+    FOREIGN KEY (state_code) REFERENCES State(state_code),
+    FOREIGN KEY (county_code, state_code) REFERENCES County(county_code, state_code)
+);
+
+CREATE TABLE RespondentAgency (
+    as_of_year INTEGER,
+    respondent_id VARCHAR(10),
+    agency_code SMALLINT,
+    PRIMARY KEY (as_of_year, respondent_id),
+    FOREIGN KEY (agency_code) REFERENCES Agency(agency_code)
+);
+
+CREATE TABLE LoanApplication (
+    ID INTEGER PRIMARY KEY,
+    as_of_year INTEGER NOT NULL,
+    respondent_id VARCHAR(10) NOT NULL,
+    loan_type SMALLINT NOT NULL,
+    property_type SMALLINT NOT NULL,
+    loan_purpose SMALLINT NOT NULL,
+    owner_occupancy SMALLINT NOT NULL,
+    loan_amount_000s NUMERIC,
+    preapproval SMALLINT NOT NULL,
+    action_taken SMALLINT NOT NULL,
+    location_id INTEGER NOT NULL,
+    applicant_ethnicity SMALLINT NOT NULL,
+    co_applicant_ethnicity SMALLINT,
+    applicant_sex SMALLINT NOT NULL,
+    co_applicant_sex SMALLINT,
+    applicant_income_000s NUMERIC,
+    purchaser_type SMALLINT,
+    rate_spread VARCHAR(10),
+    hoepa_status SMALLINT,
+    lien_status SMALLINT,
+    edit_status SMALLINT,
+    sequence_number VARCHAR(20),
+    application_date_indicator SMALLINT,
+    FOREIGN KEY (as_of_year, respondent_id) REFERENCES RespondentAgency(as_of_year, respondent_id),
+    FOREIGN KEY (loan_type) REFERENCES LoanType(loan_type),
+    FOREIGN KEY (property_type) REFERENCES PropertyType(property_type),
+    FOREIGN KEY (loan_purpose) REFERENCES LoanPurpose(loan_purpose),
+    FOREIGN KEY (owner_occupancy) REFERENCES OwnerOccupancy(owner_occupancy),
+    FOREIGN KEY (preapproval) REFERENCES Preapproval(preapproval),
+    FOREIGN KEY (action_taken) REFERENCES ActionTaken(action_taken),
+    FOREIGN KEY (location_id) REFERENCES Location(location_id),
+    FOREIGN KEY (applicant_ethnicity) REFERENCES Ethnicity(ethnicity_code),
+    FOREIGN KEY (co_applicant_ethnicity) REFERENCES Ethnicity(ethnicity_code),
+    FOREIGN KEY (applicant_sex) REFERENCES Sex(sex_code),
+    FOREIGN KEY (co_applicant_sex) REFERENCES Sex(sex_code),
+    FOREIGN KEY (purchaser_type) REFERENCES PurchaserType(purchaser_type),
+    FOREIGN KEY (hoepa_status) REFERENCES HOEPAStatus(hoepa_status),
+    FOREIGN KEY (lien_status) REFERENCES LienStatus(lien_status),
+    FOREIGN KEY (edit_status) REFERENCES EditStatus(edit_status)
+);
+
+CREATE TABLE ApplicantRace (
+    ID INTEGER,
+    race_number SMALLINT,
+    race_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, race_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (race_code) REFERENCES Race(race_code)
+);
+
+CREATE TABLE CoApplicantRace (
+    ID INTEGER,
+    race_number SMALLINT,
+    race_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, race_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (race_code) REFERENCES Race(race_code)
+);
+
+CREATE TABLE DenialReasons (
+    ID INTEGER,
+    reason_number SMALLINT,
+    denial_reason_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, reason_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (denial_reason_code) REFERENCES DenialReason(denial_reason_code)
+);
+
+
+        Corrected SQL query:
+    
+
+--- LLM Correction Response ---
+  SELECT dr.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons d JOIN DenialReason dr ON d.denial_reason_code = dr.denial_reason_code WHERE d.denial_reason_name != 'None' GROUP BY dr.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+
+==================== CORRECTION LOG END (Attempt 1) ======================
+
+
+
+==================== CORRECTION LOG START (Attempt 2) ====================
+Timestamp: 04:02:03 PM 05/05/25
+Question: What is the most common loan denial reason? 
+
+--- Original Query ---
+SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons d WHERE d.denial_reason_name != 'None' GROUP BY d.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+
+--- Query Plan/Breakdown ---
+γ(denial_reason_name, COUNT(*))(σ denial_reason_name ≠ 'None' (DenialReasons ⨝ LoanApplication))
+
+TOP(1, 1)(γ(denial_reason_name, COUNT(*)))
+
+This expression first groups the LoanApplication table with the DenialReasons table based on the denial_reason_name, then counts the occurrences of each denial reason name where it is not 'None'. Finally, it takes the top 1 result, which is the most common denial reason.
+
+Note: This expression assumes that the 'None' value is used to indicate no denial reason. If there are multiple most common reasons, this expression will only return one of them. To get all the most common reasons, additional processing might be needed.
+
+--- Failed Query (Attempt {correction_attempts}) ---
+SELECT dr.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons d JOIN DenialReason dr ON d.denial_reason_code = dr.denial_reason_code WHERE d.denial_reason_name != 'None' GROUP BY dr.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+
+--- Error Message ---
+Error executing query. Exit status: 1
+Command error output:
+Database error: column d.denial_reason_name does not exist
+LINE 1: ....denial_reason_code = dr.denial_reason_code WHERE d.denial_r...
+
+Hints:
+HINT:  Perhaps you meant to reference the column "dr.denial_reason_name".
+
+--- Correction Prompt ---
+
+        Fix the SQL query based on the error, original plan, and schema. Pay special attention to the hint in the error message if there is one.
+
+        Instructions:
+        1. Fix the SQL query based on the error message and hints.
+        2. Compare Failed SQL to the Original Plan and Schema.
+        3. Ensure all necessary tables are properly joined, especially for junction tables.
+        4. Use proper table aliases and qualify all column references.
+        5. Maintain the original query's intent as shown in the plan.
+        6. Output only the corrected SQL query, no explanations.
+
+        Original question: What is the most common loan denial reason? 
+
+        Original Plan:
+        γ(denial_reason_name, COUNT(*))(σ denial_reason_name ≠ 'None' (DenialReasons ⨝ LoanApplication))
+
+TOP(1, 1)(γ(denial_reason_name, COUNT(*)))
+
+This expression first groups the LoanApplication table with the DenialReasons table based on the denial_reason_name, then counts the occurrences of each denial reason name where it is not 'None'. Finally, it takes the top 1 result, which is the most common denial reason.
+
+Note: This expression assumes that the 'None' value is used to indicate no denial reason. If there are multiple most common reasons, this expression will only return one of them. To get all the most common reasons, additional processing might be needed.
+
+        Failed SQL query:
+        ```sql
+        SELECT dr.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons d JOIN DenialReason dr ON d.denial_reason_code = dr.denial_reason_code WHERE d.denial_reason_name != 'None' GROUP BY dr.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+        ```
+
+        Error message:
+        Error executing query. Exit status: 1
+Command error output:
+Database error: column d.denial_reason_name does not exist
+LINE 1: ....denial_reason_code = dr.denial_reason_code WHERE d.denial_r...
+
+Hints:
+HINT:  Perhaps you meant to reference the column "dr.denial_reason_name".
+
+        
+            Error Type Hint: Column Not Found.
+            Possible Causes:
+            1. Typo in column name (check schema).
+            2. Column exists in a different table than specified (check JOINs and aliases).
+            3. Trying to access a descriptive field (e.g., `denial_reason_name`) from a junction table (e.g., `DenialReasons`) instead of the lookup table (e.g., `DenialReason`). You MUST join to the lookup table.
+            4. Missing table alias or incorrect alias used.
+            Check the original Query Plan/Breakdown for intended logic.
+        
+            Special Note for DenialReasons Queries:
+            1. DenialReasons is a junction table that connects LoanApplication to DenialReason.
+            2. The table structure is:
+               - DenialReasons: (ID, reason_number, denial_reason_code)
+               - DenialReason: (denial_reason_code, denial_reason_name)
+            3. To get denial reason names, you MUST:
+               - Join DenialReasons with DenialReason using denial_reason_code
+               - Access denial_reason_name from DenialReason table, NOT DenialReasons
+            4. Example correct query structure:
+               ```sql
+               SELECT dr.denial_reason_name, COUNT(*) as count
+               FROM DenialReasons d
+               JOIN DenialReason dr ON d.denial_reason_code = dr.denial_reason_code
+               GROUP BY dr.denial_reason_name
+               ORDER BY count DESC
+               ```
+            5. Common mistakes to avoid:
+               - Trying to access denial_reason_name from DenialReasons table (it doesn't exist there)
+               - Missing the join with DenialReason table
+               - Using wrong join conditions
+        
+
+        Full Database Schema:
+        CREATE TABLE Agency (
+    agency_code SMALLINT PRIMARY KEY,
+    agency_name VARCHAR(100) NOT NULL,
+    agency_abbr VARCHAR(20) NOT NULL
+);
+
+CREATE TABLE LoanType (
+    loan_type SMALLINT PRIMARY KEY,
+    loan_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE PropertyType (
+    property_type SMALLINT PRIMARY KEY,
+    property_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE LoanPurpose (
+    loan_purpose SMALLINT PRIMARY KEY,
+    loan_purpose_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE OwnerOccupancy (
+    owner_occupancy SMALLINT PRIMARY KEY,
+    owner_occupancy_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Preapproval (
+    preapproval SMALLINT PRIMARY KEY,
+    preapproval_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE ActionTaken (
+    action_taken SMALLINT PRIMARY KEY,
+    action_taken_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE MSA (
+    msamd VARCHAR(5) PRIMARY KEY,
+    msamd_name VARCHAR(100)
+);
+
+CREATE TABLE State (
+    state_code CHAR(2) PRIMARY KEY,
+    state_name VARCHAR(100) NOT NULL,
+    state_abbr CHAR(2) NOT NULL
+);
+
+CREATE TABLE County (
+    county_code CHAR(3),
+    state_code CHAR(2),
+    county_name VARCHAR(100) NOT NULL,
+    PRIMARY KEY (county_code, state_code),
+    FOREIGN KEY (state_code) REFERENCES State(state_code)
+);
+
+CREATE TABLE Ethnicity (
+    ethnicity_code SMALLINT PRIMARY KEY,
+    ethnicity_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Race (
+    race_code SMALLINT PRIMARY KEY,
+    race_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Sex (
+    sex_code SMALLINT PRIMARY KEY,
+    sex_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE PurchaserType (
+    purchaser_type SMALLINT PRIMARY KEY,
+    purchaser_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE DenialReason (
+    denial_reason_code SMALLINT PRIMARY KEY,
+    denial_reason_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE HOEPAStatus (
+    hoepa_status SMALLINT PRIMARY KEY,
+    hoepa_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE LienStatus (
+    lien_status SMALLINT PRIMARY KEY,
+    lien_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE EditStatus (
+    edit_status SMALLINT PRIMARY KEY,
+    edit_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Location (
+    location_id SERIAL PRIMARY KEY,
+    msamd VARCHAR(5),
+    state_code CHAR(2),
+    county_code CHAR(3),
+    census_tract_number VARCHAR(8),
+    population INTEGER,
+    minority_population NUMERIC,
+    hud_median_family_income INTEGER,
+    tract_to_msamd_income NUMERIC,
+    number_of_owner_occupied_units INTEGER,
+    number_of_1_to_4_family_units INTEGER,
+    FOREIGN KEY (msamd) REFERENCES MSA(msamd),
+    FOREIGN KEY (state_code) REFERENCES State(state_code),
+    FOREIGN KEY (county_code, state_code) REFERENCES County(county_code, state_code)
+);
+
+CREATE TABLE RespondentAgency (
+    as_of_year INTEGER,
+    respondent_id VARCHAR(10),
+    agency_code SMALLINT,
+    PRIMARY KEY (as_of_year, respondent_id),
+    FOREIGN KEY (agency_code) REFERENCES Agency(agency_code)
+);
+
+CREATE TABLE LoanApplication (
+    ID INTEGER PRIMARY KEY,
+    as_of_year INTEGER NOT NULL,
+    respondent_id VARCHAR(10) NOT NULL,
+    loan_type SMALLINT NOT NULL,
+    property_type SMALLINT NOT NULL,
+    loan_purpose SMALLINT NOT NULL,
+    owner_occupancy SMALLINT NOT NULL,
+    loan_amount_000s NUMERIC,
+    preapproval SMALLINT NOT NULL,
+    action_taken SMALLINT NOT NULL,
+    location_id INTEGER NOT NULL,
+    applicant_ethnicity SMALLINT NOT NULL,
+    co_applicant_ethnicity SMALLINT,
+    applicant_sex SMALLINT NOT NULL,
+    co_applicant_sex SMALLINT,
+    applicant_income_000s NUMERIC,
+    purchaser_type SMALLINT,
+    rate_spread VARCHAR(10),
+    hoepa_status SMALLINT,
+    lien_status SMALLINT,
+    edit_status SMALLINT,
+    sequence_number VARCHAR(20),
+    application_date_indicator SMALLINT,
+    FOREIGN KEY (as_of_year, respondent_id) REFERENCES RespondentAgency(as_of_year, respondent_id),
+    FOREIGN KEY (loan_type) REFERENCES LoanType(loan_type),
+    FOREIGN KEY (property_type) REFERENCES PropertyType(property_type),
+    FOREIGN KEY (loan_purpose) REFERENCES LoanPurpose(loan_purpose),
+    FOREIGN KEY (owner_occupancy) REFERENCES OwnerOccupancy(owner_occupancy),
+    FOREIGN KEY (preapproval) REFERENCES Preapproval(preapproval),
+    FOREIGN KEY (action_taken) REFERENCES ActionTaken(action_taken),
+    FOREIGN KEY (location_id) REFERENCES Location(location_id),
+    FOREIGN KEY (applicant_ethnicity) REFERENCES Ethnicity(ethnicity_code),
+    FOREIGN KEY (co_applicant_ethnicity) REFERENCES Ethnicity(ethnicity_code),
+    FOREIGN KEY (applicant_sex) REFERENCES Sex(sex_code),
+    FOREIGN KEY (co_applicant_sex) REFERENCES Sex(sex_code),
+    FOREIGN KEY (purchaser_type) REFERENCES PurchaserType(purchaser_type),
+    FOREIGN KEY (hoepa_status) REFERENCES HOEPAStatus(hoepa_status),
+    FOREIGN KEY (lien_status) REFERENCES LienStatus(lien_status),
+    FOREIGN KEY (edit_status) REFERENCES EditStatus(edit_status)
+);
+
+CREATE TABLE ApplicantRace (
+    ID INTEGER,
+    race_number SMALLINT,
+    race_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, race_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (race_code) REFERENCES Race(race_code)
+);
+
+CREATE TABLE CoApplicantRace (
+    ID INTEGER,
+    race_number SMALLINT,
+    race_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, race_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (race_code) REFERENCES Race(race_code)
+);
+
+CREATE TABLE DenialReasons (
+    ID INTEGER,
+    reason_number SMALLINT,
+    denial_reason_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, reason_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (denial_reason_code) REFERENCES DenialReason(denial_reason_code)
+);
+
+
+        Corrected SQL query:
+    
+
+--- LLM Correction Response ---
+ SELECT dr.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons d JOIN DenialReason dr ON d.denial_reason_code = dr.denial_reason_code WHERE d.denial_reason_name != 'None' GROUP BY dr.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+
+==================== CORRECTION LOG END (Attempt 2) ======================
+
+
+
+==================== CORRECTION LOG START (Attempt 1) ====================
+Timestamp: 04:03:21 PM 05/05/25
+Question:  What is the average income of owner occupied applications? 
+
+--- Original Query ---
+SELECT AVG(l.hud_median_family_income) AS average_income FROM LoanApplication l WHERE l.owner_occupancy = 1 AND l.action_taken = 1;
+
+--- Query Plan/Breakdown ---
+π hud_median_family_income, number_of_owner_occupied_units (σ owner_occupancy = 1 ∧ action_taken = 1 (LoanApplication ⨝ Location))
+
+
+
+--- Failed Query (Attempt {correction_attempts}) ---
+SELECT AVG(l.hud_median_family_income) AS average_income FROM LoanApplication l WHERE l.owner_occupancy = 1 AND l.action_taken = 1;
+
+--- Error Message ---
+Error executing query. Exit status: 1
+Command error output:
+Database error: column l.hud_median_family_income does not exist
+LINE 1: SELECT AVG(l.hud_median_family_income) AS average_income FRO...
+
+--- Correction Prompt ---
+
+        Fix the SQL query based on the error, original plan, and schema. Pay special attention to the hint in the error message if there is one.
+
+        Instructions:
+        1. Fix the SQL query based on the error message and hints.
+        2. Compare Failed SQL to the Original Plan and Schema.
+        3. Ensure all necessary tables are properly joined, especially for junction tables.
+        4. Use proper table aliases and qualify all column references.
+        5. Maintain the original query's intent as shown in the plan.
+        6. Output only the corrected SQL query, no explanations.
+
+        Original question:  What is the average income of owner occupied applications? 
+
+        Original Plan:
+        π hud_median_family_income, number_of_owner_occupied_units (σ owner_occupancy = 1 ∧ action_taken = 1 (LoanApplication ⨝ Location))
+
+
+
+        Failed SQL query:
+        ```sql
+        SELECT AVG(l.hud_median_family_income) AS average_income FROM LoanApplication l WHERE l.owner_occupancy = 1 AND l.action_taken = 1;
+        ```
+
+        Error message:
+        Error executing query. Exit status: 1
+Command error output:
+Database error: column l.hud_median_family_income does not exist
+LINE 1: SELECT AVG(l.hud_median_family_income) AS average_income FRO...
+
+        
+            Error Type Hint: Column Not Found.
+            Possible Causes:
+            1. Typo in column name (check schema).
+            2. Column exists in a different table than specified (check JOINs and aliases).
+            3. Trying to access a descriptive field (e.g., `denial_reason_name`) from a junction table (e.g., `DenialReasons`) instead of the lookup table (e.g., `DenialReason`). You MUST join to the lookup table.
+            4. Missing table alias or incorrect alias used.
+            Check the original Query Plan/Breakdown for intended logic.
+        
+
+        Full Database Schema:
+        CREATE TABLE Agency (
+    agency_code SMALLINT PRIMARY KEY,
+    agency_name VARCHAR(100) NOT NULL,
+    agency_abbr VARCHAR(20) NOT NULL
+);
+
+CREATE TABLE LoanType (
+    loan_type SMALLINT PRIMARY KEY,
+    loan_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE PropertyType (
+    property_type SMALLINT PRIMARY KEY,
+    property_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE LoanPurpose (
+    loan_purpose SMALLINT PRIMARY KEY,
+    loan_purpose_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE OwnerOccupancy (
+    owner_occupancy SMALLINT PRIMARY KEY,
+    owner_occupancy_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Preapproval (
+    preapproval SMALLINT PRIMARY KEY,
+    preapproval_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE ActionTaken (
+    action_taken SMALLINT PRIMARY KEY,
+    action_taken_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE MSA (
+    msamd VARCHAR(5) PRIMARY KEY,
+    msamd_name VARCHAR(100)
+);
+
+CREATE TABLE State (
+    state_code CHAR(2) PRIMARY KEY,
+    state_name VARCHAR(100) NOT NULL,
+    state_abbr CHAR(2) NOT NULL
+);
+
+CREATE TABLE County (
+    county_code CHAR(3),
+    state_code CHAR(2),
+    county_name VARCHAR(100) NOT NULL,
+    PRIMARY KEY (county_code, state_code),
+    FOREIGN KEY (state_code) REFERENCES State(state_code)
+);
+
+CREATE TABLE Ethnicity (
+    ethnicity_code SMALLINT PRIMARY KEY,
+    ethnicity_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Race (
+    race_code SMALLINT PRIMARY KEY,
+    race_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Sex (
+    sex_code SMALLINT PRIMARY KEY,
+    sex_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE PurchaserType (
+    purchaser_type SMALLINT PRIMARY KEY,
+    purchaser_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE DenialReason (
+    denial_reason_code SMALLINT PRIMARY KEY,
+    denial_reason_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE HOEPAStatus (
+    hoepa_status SMALLINT PRIMARY KEY,
+    hoepa_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE LienStatus (
+    lien_status SMALLINT PRIMARY KEY,
+    lien_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE EditStatus (
+    edit_status SMALLINT PRIMARY KEY,
+    edit_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Location (
+    location_id SERIAL PRIMARY KEY,
+    msamd VARCHAR(5),
+    state_code CHAR(2),
+    county_code CHAR(3),
+    census_tract_number VARCHAR(8),
+    population INTEGER,
+    minority_population NUMERIC,
+    hud_median_family_income INTEGER,
+    tract_to_msamd_income NUMERIC,
+    number_of_owner_occupied_units INTEGER,
+    number_of_1_to_4_family_units INTEGER,
+    FOREIGN KEY (msamd) REFERENCES MSA(msamd),
+    FOREIGN KEY (state_code) REFERENCES State(state_code),
+    FOREIGN KEY (county_code, state_code) REFERENCES County(county_code, state_code)
+);
+
+CREATE TABLE RespondentAgency (
+    as_of_year INTEGER,
+    respondent_id VARCHAR(10),
+    agency_code SMALLINT,
+    PRIMARY KEY (as_of_year, respondent_id),
+    FOREIGN KEY (agency_code) REFERENCES Agency(agency_code)
+);
+
+CREATE TABLE LoanApplication (
+    ID INTEGER PRIMARY KEY,
+    as_of_year INTEGER NOT NULL,
+    respondent_id VARCHAR(10) NOT NULL,
+    loan_type SMALLINT NOT NULL,
+    property_type SMALLINT NOT NULL,
+    loan_purpose SMALLINT NOT NULL,
+    owner_occupancy SMALLINT NOT NULL,
+    loan_amount_000s NUMERIC,
+    preapproval SMALLINT NOT NULL,
+    action_taken SMALLINT NOT NULL,
+    location_id INTEGER NOT NULL,
+    applicant_ethnicity SMALLINT NOT NULL,
+    co_applicant_ethnicity SMALLINT,
+    applicant_sex SMALLINT NOT NULL,
+    co_applicant_sex SMALLINT,
+    applicant_income_000s NUMERIC,
+    purchaser_type SMALLINT,
+    rate_spread VARCHAR(10),
+    hoepa_status SMALLINT,
+    lien_status SMALLINT,
+    edit_status SMALLINT,
+    sequence_number VARCHAR(20),
+    application_date_indicator SMALLINT,
+    FOREIGN KEY (as_of_year, respondent_id) REFERENCES RespondentAgency(as_of_year, respondent_id),
+    FOREIGN KEY (loan_type) REFERENCES LoanType(loan_type),
+    FOREIGN KEY (property_type) REFERENCES PropertyType(property_type),
+    FOREIGN KEY (loan_purpose) REFERENCES LoanPurpose(loan_purpose),
+    FOREIGN KEY (owner_occupancy) REFERENCES OwnerOccupancy(owner_occupancy),
+    FOREIGN KEY (preapproval) REFERENCES Preapproval(preapproval),
+    FOREIGN KEY (action_taken) REFERENCES ActionTaken(action_taken),
+    FOREIGN KEY (location_id) REFERENCES Location(location_id),
+    FOREIGN KEY (applicant_ethnicity) REFERENCES Ethnicity(ethnicity_code),
+    FOREIGN KEY (co_applicant_ethnicity) REFERENCES Ethnicity(ethnicity_code),
+    FOREIGN KEY (applicant_sex) REFERENCES Sex(sex_code),
+    FOREIGN KEY (co_applicant_sex) REFERENCES Sex(sex_code),
+    FOREIGN KEY (purchaser_type) REFERENCES PurchaserType(purchaser_type),
+    FOREIGN KEY (hoepa_status) REFERENCES HOEPAStatus(hoepa_status),
+    FOREIGN KEY (lien_status) REFERENCES LienStatus(lien_status),
+    FOREIGN KEY (edit_status) REFERENCES EditStatus(edit_status)
+);
+
+CREATE TABLE ApplicantRace (
+    ID INTEGER,
+    race_number SMALLINT,
+    race_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, race_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (race_code) REFERENCES Race(race_code)
+);
+
+CREATE TABLE CoApplicantRace (
+    ID INTEGER,
+    race_number SMALLINT,
+    race_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, race_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (race_code) REFERENCES Race(race_code)
+);
+
+CREATE TABLE DenialReasons (
+    ID INTEGER,
+    reason_number SMALLINT,
+    denial_reason_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, reason_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (denial_reason_code) REFERENCES DenialReason(denial_reason_code)
+);
+
+
+        Corrected SQL query:
+    
+
+--- LLM Correction Response ---
+  SELECT AVG(l.hud_median_family_income) AS average_income FROM LoanApplication l WHERE l.owner_occupancy = 1 AND l.action_taken = 1;
+
+==================== CORRECTION LOG END (Attempt 1) ======================
+
+
+
+==================== CORRECTION LOG START (Attempt 2) ====================
+Timestamp: 04:03:21 PM 05/05/25
+Question:  What is the average income of owner occupied applications? 
+
+--- Original Query ---
+SELECT AVG(l.hud_median_family_income) AS average_income FROM LoanApplication l WHERE l.owner_occupancy = 1 AND l.action_taken = 1;
+
+--- Query Plan/Breakdown ---
+π hud_median_family_income, number_of_owner_occupied_units (σ owner_occupancy = 1 ∧ action_taken = 1 (LoanApplication ⨝ Location))
+
+
+
+--- Failed Query (Attempt {correction_attempts}) ---
+SELECT AVG(l.hud_median_family_income) AS average_income FROM LoanApplication l WHERE l.owner_occupancy = 1 AND l.action_taken = 1;
+
+--- Error Message ---
+Error executing query. Exit status: 1
+Command error output:
+Database error: column l.hud_median_family_income does not exist
+LINE 1: SELECT AVG(l.hud_median_family_income) AS average_income FRO...
+
+--- Correction Prompt ---
+
+        Fix the SQL query based on the error, original plan, and schema. Pay special attention to the hint in the error message if there is one.
+
+        Instructions:
+        1. Fix the SQL query based on the error message and hints.
+        2. Compare Failed SQL to the Original Plan and Schema.
+        3. Ensure all necessary tables are properly joined, especially for junction tables.
+        4. Use proper table aliases and qualify all column references.
+        5. Maintain the original query's intent as shown in the plan.
+        6. Output only the corrected SQL query, no explanations.
+
+        Original question:  What is the average income of owner occupied applications? 
+
+        Original Plan:
+        π hud_median_family_income, number_of_owner_occupied_units (σ owner_occupancy = 1 ∧ action_taken = 1 (LoanApplication ⨝ Location))
+
+
+
+        Failed SQL query:
+        ```sql
+        SELECT AVG(l.hud_median_family_income) AS average_income FROM LoanApplication l WHERE l.owner_occupancy = 1 AND l.action_taken = 1;
+        ```
+
+        Error message:
+        Error executing query. Exit status: 1
+Command error output:
+Database error: column l.hud_median_family_income does not exist
+LINE 1: SELECT AVG(l.hud_median_family_income) AS average_income FRO...
+
+        
+            Error Type Hint: Column Not Found.
+            Possible Causes:
+            1. Typo in column name (check schema).
+            2. Column exists in a different table than specified (check JOINs and aliases).
+            3. Trying to access a descriptive field (e.g., `denial_reason_name`) from a junction table (e.g., `DenialReasons`) instead of the lookup table (e.g., `DenialReason`). You MUST join to the lookup table.
+            4. Missing table alias or incorrect alias used.
+            Check the original Query Plan/Breakdown for intended logic.
+        
+
+        Full Database Schema:
+        CREATE TABLE Agency (
+    agency_code SMALLINT PRIMARY KEY,
+    agency_name VARCHAR(100) NOT NULL,
+    agency_abbr VARCHAR(20) NOT NULL
+);
+
+CREATE TABLE LoanType (
+    loan_type SMALLINT PRIMARY KEY,
+    loan_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE PropertyType (
+    property_type SMALLINT PRIMARY KEY,
+    property_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE LoanPurpose (
+    loan_purpose SMALLINT PRIMARY KEY,
+    loan_purpose_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE OwnerOccupancy (
+    owner_occupancy SMALLINT PRIMARY KEY,
+    owner_occupancy_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Preapproval (
+    preapproval SMALLINT PRIMARY KEY,
+    preapproval_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE ActionTaken (
+    action_taken SMALLINT PRIMARY KEY,
+    action_taken_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE MSA (
+    msamd VARCHAR(5) PRIMARY KEY,
+    msamd_name VARCHAR(100)
+);
+
+CREATE TABLE State (
+    state_code CHAR(2) PRIMARY KEY,
+    state_name VARCHAR(100) NOT NULL,
+    state_abbr CHAR(2) NOT NULL
+);
+
+CREATE TABLE County (
+    county_code CHAR(3),
+    state_code CHAR(2),
+    county_name VARCHAR(100) NOT NULL,
+    PRIMARY KEY (county_code, state_code),
+    FOREIGN KEY (state_code) REFERENCES State(state_code)
+);
+
+CREATE TABLE Ethnicity (
+    ethnicity_code SMALLINT PRIMARY KEY,
+    ethnicity_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Race (
+    race_code SMALLINT PRIMARY KEY,
+    race_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Sex (
+    sex_code SMALLINT PRIMARY KEY,
+    sex_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE PurchaserType (
+    purchaser_type SMALLINT PRIMARY KEY,
+    purchaser_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE DenialReason (
+    denial_reason_code SMALLINT PRIMARY KEY,
+    denial_reason_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE HOEPAStatus (
+    hoepa_status SMALLINT PRIMARY KEY,
+    hoepa_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE LienStatus (
+    lien_status SMALLINT PRIMARY KEY,
+    lien_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE EditStatus (
+    edit_status SMALLINT PRIMARY KEY,
+    edit_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Location (
+    location_id SERIAL PRIMARY KEY,
+    msamd VARCHAR(5),
+    state_code CHAR(2),
+    county_code CHAR(3),
+    census_tract_number VARCHAR(8),
+    population INTEGER,
+    minority_population NUMERIC,
+    hud_median_family_income INTEGER,
+    tract_to_msamd_income NUMERIC,
+    number_of_owner_occupied_units INTEGER,
+    number_of_1_to_4_family_units INTEGER,
+    FOREIGN KEY (msamd) REFERENCES MSA(msamd),
+    FOREIGN KEY (state_code) REFERENCES State(state_code),
+    FOREIGN KEY (county_code, state_code) REFERENCES County(county_code, state_code)
+);
+
+CREATE TABLE RespondentAgency (
+    as_of_year INTEGER,
+    respondent_id VARCHAR(10),
+    agency_code SMALLINT,
+    PRIMARY KEY (as_of_year, respondent_id),
+    FOREIGN KEY (agency_code) REFERENCES Agency(agency_code)
+);
+
+CREATE TABLE LoanApplication (
+    ID INTEGER PRIMARY KEY,
+    as_of_year INTEGER NOT NULL,
+    respondent_id VARCHAR(10) NOT NULL,
+    loan_type SMALLINT NOT NULL,
+    property_type SMALLINT NOT NULL,
+    loan_purpose SMALLINT NOT NULL,
+    owner_occupancy SMALLINT NOT NULL,
+    loan_amount_000s NUMERIC,
+    preapproval SMALLINT NOT NULL,
+    action_taken SMALLINT NOT NULL,
+    location_id INTEGER NOT NULL,
+    applicant_ethnicity SMALLINT NOT NULL,
+    co_applicant_ethnicity SMALLINT,
+    applicant_sex SMALLINT NOT NULL,
+    co_applicant_sex SMALLINT,
+    applicant_income_000s NUMERIC,
+    purchaser_type SMALLINT,
+    rate_spread VARCHAR(10),
+    hoepa_status SMALLINT,
+    lien_status SMALLINT,
+    edit_status SMALLINT,
+    sequence_number VARCHAR(20),
+    application_date_indicator SMALLINT,
+    FOREIGN KEY (as_of_year, respondent_id) REFERENCES RespondentAgency(as_of_year, respondent_id),
+    FOREIGN KEY (loan_type) REFERENCES LoanType(loan_type),
+    FOREIGN KEY (property_type) REFERENCES PropertyType(property_type),
+    FOREIGN KEY (loan_purpose) REFERENCES LoanPurpose(loan_purpose),
+    FOREIGN KEY (owner_occupancy) REFERENCES OwnerOccupancy(owner_occupancy),
+    FOREIGN KEY (preapproval) REFERENCES Preapproval(preapproval),
+    FOREIGN KEY (action_taken) REFERENCES ActionTaken(action_taken),
+    FOREIGN KEY (location_id) REFERENCES Location(location_id),
+    FOREIGN KEY (applicant_ethnicity) REFERENCES Ethnicity(ethnicity_code),
+    FOREIGN KEY (co_applicant_ethnicity) REFERENCES Ethnicity(ethnicity_code),
+    FOREIGN KEY (applicant_sex) REFERENCES Sex(sex_code),
+    FOREIGN KEY (co_applicant_sex) REFERENCES Sex(sex_code),
+    FOREIGN KEY (purchaser_type) REFERENCES PurchaserType(purchaser_type),
+    FOREIGN KEY (hoepa_status) REFERENCES HOEPAStatus(hoepa_status),
+    FOREIGN KEY (lien_status) REFERENCES LienStatus(lien_status),
+    FOREIGN KEY (edit_status) REFERENCES EditStatus(edit_status)
+);
+
+CREATE TABLE ApplicantRace (
+    ID INTEGER,
+    race_number SMALLINT,
+    race_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, race_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (race_code) REFERENCES Race(race_code)
+);
+
+CREATE TABLE CoApplicantRace (
+    ID INTEGER,
+    race_number SMALLINT,
+    race_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, race_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (race_code) REFERENCES Race(race_code)
+);
+
+CREATE TABLE DenialReasons (
+    ID INTEGER,
+    reason_number SMALLINT,
+    denial_reason_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, reason_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (denial_reason_code) REFERENCES DenialReason(denial_reason_code)
+);
+
+
+        Corrected SQL query:
+    
+
+--- LLM Correction Response ---
+ SELECT AVG(l.hud_median_family_income) AS average_income FROM LoanApplication l WHERE l.owner_occupancy = 1 AND l.action_taken = 1;
+
+==================== CORRECTION LOG END (Attempt 2) ======================
+
+
+
+==================== CORRECTION LOG START (Attempt 1) ====================
+Timestamp: 04:13:03 PM 05/05/25
+Question:  What is the most common loan denial reason? 
+
+--- Original Query ---
+SELECT d.denial_reason_name FROM DenialReasons d ORDER BY COUNT(d.denial_reason_code) DESC LIMIT 1;
+
+--- Query Plan/Breakdown ---
+
+π denial_reason_name (γ denial_reason_name, ρ denial_reason_name (σ denial_reason_code = (ρ DenialReasons) ⋈ LoanApplication.denial_reason_code))
+
+
+
+--- Failed Query (Attempt {correction_attempts}) ---
+SELECT d.denial_reason_name FROM DenialReasons d ORDER BY COUNT(d.denial_reason_code) DESC LIMIT 1;
+
+--- Error Message ---
+Error executing query. Exit status: 1
+Command error output:
+Database error: column d.denial_reason_name does not exist
+LINE 1: SELECT d.denial_reason_name FROM DenialReasons d ORDER BY CO...
+
+Hints:
+HINT:  Perhaps you meant to reference the column "d.denial_reason_code".
+
+--- Correction Prompt ---
+
+        Fix the SQL query based on the error, original plan, and schema. Pay special attention to the hint in the error message if there is one.
+
+        Instructions:
+        1. Fix the SQL query based on the error message and hints.
+        2. Compare Failed SQL to the Original Plan and Schema.
+        3. Ensure all necessary tables are properly joined, especially for junction tables.
+        4. Use proper table aliases and qualify all column references.
+        5. Maintain the original query's intent as shown in the plan.
+        6. Output only the corrected SQL query, no explanations.
+
+        Original question:  What is the most common loan denial reason? 
+
+        Original Plan:
+        
+π denial_reason_name (γ denial_reason_name, ρ denial_reason_name (σ denial_reason_code = (ρ DenialReasons) ⋈ LoanApplication.denial_reason_code))
+
+
+
+        Failed SQL query:
+        ```sql
+        SELECT d.denial_reason_name FROM DenialReasons d ORDER BY COUNT(d.denial_reason_code) DESC LIMIT 1;
+        ```
+
+        Error message:
+        Error executing query. Exit status: 1
+Command error output:
+Database error: column d.denial_reason_name does not exist
+LINE 1: SELECT d.denial_reason_name FROM DenialReasons d ORDER BY CO...
+
+Hints:
+HINT:  Perhaps you meant to reference the column "d.denial_reason_code".
+
+        
+            Error Type Hint: Column Not Found.
+            Possible Causes:
+            1. Typo in column name (check schema).
+            2. Column exists in a different table than specified (check JOINs and aliases).
+            3. Trying to access a descriptive field (e.g., `denial_reason_name`) from a junction table (e.g., `DenialReasons`) instead of the lookup table (e.g., `DenialReason`). You MUST join to the lookup table.
+            4. Missing table alias or incorrect alias used.
+            Check the original Query Plan/Breakdown for intended logic.
+        
+            Special Note for DenialReasons Queries:
+            1. DenialReasons is a junction table that connects LoanApplication to DenialReason.
+            2. The table structure is:
+               - DenialReasons: (ID, reason_number, denial_reason_code)
+               - DenialReason: (denial_reason_code, denial_reason_name)
+            3. To get denial reason names, you MUST:
+               - Join DenialReasons with DenialReason using denial_reason_code
+               - Access denial_reason_name from DenialReason table, NOT DenialReasons
+            4. Example correct query structure:
+               ```sql
+               SELECT dr.denial_reason_name, COUNT(*) as count
+               FROM DenialReasons d
+               JOIN DenialReason dr ON d.denial_reason_code = dr.denial_reason_code
+               GROUP BY dr.denial_reason_name
+               ORDER BY count DESC
+               ```
+            5. Common mistakes to avoid:
+               - Trying to access denial_reason_name from DenialReasons table (it doesn't exist there)
+               - Missing the join with DenialReason table
+               - Using wrong join conditions
+        
+
+        Full Database Schema:
+        CREATE TABLE Agency (
+    agency_code SMALLINT PRIMARY KEY,
+    agency_name VARCHAR(100) NOT NULL,
+    agency_abbr VARCHAR(20) NOT NULL
+);
+
+CREATE TABLE LoanType (
+    loan_type SMALLINT PRIMARY KEY,
+    loan_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE PropertyType (
+    property_type SMALLINT PRIMARY KEY,
+    property_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE LoanPurpose (
+    loan_purpose SMALLINT PRIMARY KEY,
+    loan_purpose_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE OwnerOccupancy (
+    owner_occupancy SMALLINT PRIMARY KEY,
+    owner_occupancy_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Preapproval (
+    preapproval SMALLINT PRIMARY KEY,
+    preapproval_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE ActionTaken (
+    action_taken SMALLINT PRIMARY KEY,
+    action_taken_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE MSA (
+    msamd VARCHAR(5) PRIMARY KEY,
+    msamd_name VARCHAR(100)
+);
+
+CREATE TABLE State (
+    state_code CHAR(2) PRIMARY KEY,
+    state_name VARCHAR(100) NOT NULL,
+    state_abbr CHAR(2) NOT NULL
+);
+
+CREATE TABLE County (
+    county_code CHAR(3),
+    state_code CHAR(2),
+    county_name VARCHAR(100) NOT NULL,
+    PRIMARY KEY (county_code, state_code),
+    FOREIGN KEY (state_code) REFERENCES State(state_code)
+);
+
+CREATE TABLE Ethnicity (
+    ethnicity_code SMALLINT PRIMARY KEY,
+    ethnicity_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Race (
+    race_code SMALLINT PRIMARY KEY,
+    race_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Sex (
+    sex_code SMALLINT PRIMARY KEY,
+    sex_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE PurchaserType (
+    purchaser_type SMALLINT PRIMARY KEY,
+    purchaser_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE DenialReason (
+    denial_reason_code SMALLINT PRIMARY KEY,
+    denial_reason_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE HOEPAStatus (
+    hoepa_status SMALLINT PRIMARY KEY,
+    hoepa_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE LienStatus (
+    lien_status SMALLINT PRIMARY KEY,
+    lien_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE EditStatus (
+    edit_status SMALLINT PRIMARY KEY,
+    edit_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Location (
+    location_id SERIAL PRIMARY KEY,
+    msamd VARCHAR(5),
+    state_code CHAR(2),
+    county_code CHAR(3),
+    census_tract_number VARCHAR(8),
+    population INTEGER,
+    minority_population NUMERIC,
+    hud_median_family_income INTEGER,
+    tract_to_msamd_income NUMERIC,
+    number_of_owner_occupied_units INTEGER,
+    number_of_1_to_4_family_units INTEGER,
+    FOREIGN KEY (msamd) REFERENCES MSA(msamd),
+    FOREIGN KEY (state_code) REFERENCES State(state_code),
+    FOREIGN KEY (county_code, state_code) REFERENCES County(county_code, state_code)
+);
+
+CREATE TABLE RespondentAgency (
+    as_of_year INTEGER,
+    respondent_id VARCHAR(10),
+    agency_code SMALLINT,
+    PRIMARY KEY (as_of_year, respondent_id),
+    FOREIGN KEY (agency_code) REFERENCES Agency(agency_code)
+);
+
+CREATE TABLE LoanApplication (
+    ID INTEGER PRIMARY KEY,
+    as_of_year INTEGER NOT NULL,
+    respondent_id VARCHAR(10) NOT NULL,
+    loan_type SMALLINT NOT NULL,
+    property_type SMALLINT NOT NULL,
+    loan_purpose SMALLINT NOT NULL,
+    owner_occupancy SMALLINT NOT NULL,
+    loan_amount_000s NUMERIC,
+    preapproval SMALLINT NOT NULL,
+    action_taken SMALLINT NOT NULL,
+    location_id INTEGER NOT NULL,
+    applicant_ethnicity SMALLINT NOT NULL,
+    co_applicant_ethnicity SMALLINT,
+    applicant_sex SMALLINT NOT NULL,
+    co_applicant_sex SMALLINT,
+    applicant_income_000s NUMERIC,
+    purchaser_type SMALLINT,
+    rate_spread VARCHAR(10),
+    hoepa_status SMALLINT,
+    lien_status SMALLINT,
+    edit_status SMALLINT,
+    sequence_number VARCHAR(20),
+    application_date_indicator SMALLINT,
+    FOREIGN KEY (as_of_year, respondent_id) REFERENCES RespondentAgency(as_of_year, respondent_id),
+    FOREIGN KEY (loan_type) REFERENCES LoanType(loan_type),
+    FOREIGN KEY (property_type) REFERENCES PropertyType(property_type),
+    FOREIGN KEY (loan_purpose) REFERENCES LoanPurpose(loan_purpose),
+    FOREIGN KEY (owner_occupancy) REFERENCES OwnerOccupancy(owner_occupancy),
+    FOREIGN KEY (preapproval) REFERENCES Preapproval(preapproval),
+    FOREIGN KEY (action_taken) REFERENCES ActionTaken(action_taken),
+    FOREIGN KEY (location_id) REFERENCES Location(location_id),
+    FOREIGN KEY (applicant_ethnicity) REFERENCES Ethnicity(ethnicity_code),
+    FOREIGN KEY (co_applicant_ethnicity) REFERENCES Ethnicity(ethnicity_code),
+    FOREIGN KEY (applicant_sex) REFERENCES Sex(sex_code),
+    FOREIGN KEY (co_applicant_sex) REFERENCES Sex(sex_code),
+    FOREIGN KEY (purchaser_type) REFERENCES PurchaserType(purchaser_type),
+    FOREIGN KEY (hoepa_status) REFERENCES HOEPAStatus(hoepa_status),
+    FOREIGN KEY (lien_status) REFERENCES LienStatus(lien_status),
+    FOREIGN KEY (edit_status) REFERENCES EditStatus(edit_status)
+);
+
+CREATE TABLE ApplicantRace (
+    ID INTEGER,
+    race_number SMALLINT,
+    race_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, race_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (race_code) REFERENCES Race(race_code)
+);
+
+CREATE TABLE CoApplicantRace (
+    ID INTEGER,
+    race_number SMALLINT,
+    race_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, race_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (race_code) REFERENCES Race(race_code)
+);
+
+CREATE TABLE DenialReasons (
+    ID INTEGER,
+    reason_number SMALLINT,
+    denial_reason_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, reason_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (denial_reason_code) REFERENCES DenialReason(denial_reason_code)
+);
+
+
+        Corrected SQL query:
+    
+
+--- LLM Correction Response ---
+  SELECT d.denial_reason_name FROM DenialReasons d ORDER BY COUNT(*) DESC LIMIT 1;
+
+==================== CORRECTION LOG END (Attempt 1) ======================
+
+
+
+==================== CORRECTION LOG START (Attempt 2) ====================
+Timestamp: 04:13:03 PM 05/05/25
+Question:  What is the most common loan denial reason? 
+
+--- Original Query ---
+SELECT d.denial_reason_name FROM DenialReasons d ORDER BY COUNT(d.denial_reason_code) DESC LIMIT 1;
+
+--- Query Plan/Breakdown ---
+
+π denial_reason_name (γ denial_reason_name, ρ denial_reason_name (σ denial_reason_code = (ρ DenialReasons) ⋈ LoanApplication.denial_reason_code))
+
+
+
+--- Failed Query (Attempt {correction_attempts}) ---
+SELECT d.denial_reason_name FROM DenialReasons d ORDER BY COUNT(*) DESC LIMIT 1;
+
+--- Error Message ---
+Error executing query. Exit status: 1
+Command error output:
+Database error: column d.denial_reason_name does not exist
+LINE 1: SELECT d.denial_reason_name FROM DenialReasons d ORDER BY CO...
+
+Hints:
+HINT:  Perhaps you meant to reference the column "d.denial_reason_code".
+
+--- Correction Prompt ---
+
+        Fix the SQL query based on the error, original plan, and schema. Pay special attention to the hint in the error message if there is one.
+
+        Instructions:
+        1. Fix the SQL query based on the error message and hints.
+        2. Compare Failed SQL to the Original Plan and Schema.
+        3. Ensure all necessary tables are properly joined, especially for junction tables.
+        4. Use proper table aliases and qualify all column references.
+        5. Maintain the original query's intent as shown in the plan.
+        6. Output only the corrected SQL query, no explanations.
+
+        Original question:  What is the most common loan denial reason? 
+
+        Original Plan:
+        
+π denial_reason_name (γ denial_reason_name, ρ denial_reason_name (σ denial_reason_code = (ρ DenialReasons) ⋈ LoanApplication.denial_reason_code))
+
+
+
+        Failed SQL query:
+        ```sql
+        SELECT d.denial_reason_name FROM DenialReasons d ORDER BY COUNT(*) DESC LIMIT 1;
+        ```
+
+        Error message:
+        Error executing query. Exit status: 1
+Command error output:
+Database error: column d.denial_reason_name does not exist
+LINE 1: SELECT d.denial_reason_name FROM DenialReasons d ORDER BY CO...
+
+Hints:
+HINT:  Perhaps you meant to reference the column "d.denial_reason_code".
+
+        
+            Error Type Hint: Column Not Found.
+            Possible Causes:
+            1. Typo in column name (check schema).
+            2. Column exists in a different table than specified (check JOINs and aliases).
+            3. Trying to access a descriptive field (e.g., `denial_reason_name`) from a junction table (e.g., `DenialReasons`) instead of the lookup table (e.g., `DenialReason`). You MUST join to the lookup table.
+            4. Missing table alias or incorrect alias used.
+            Check the original Query Plan/Breakdown for intended logic.
+        
+            Special Note for DenialReasons Queries:
+            1. DenialReasons is a junction table that connects LoanApplication to DenialReason.
+            2. The table structure is:
+               - DenialReasons: (ID, reason_number, denial_reason_code)
+               - DenialReason: (denial_reason_code, denial_reason_name)
+            3. To get denial reason names, you MUST:
+               - Join DenialReasons with DenialReason using denial_reason_code
+               - Access denial_reason_name from DenialReason table, NOT DenialReasons
+            4. Example correct query structure:
+               ```sql
+               SELECT dr.denial_reason_name, COUNT(*) as count
+               FROM DenialReasons d
+               JOIN DenialReason dr ON d.denial_reason_code = dr.denial_reason_code
+               GROUP BY dr.denial_reason_name
+               ORDER BY count DESC
+               ```
+            5. Common mistakes to avoid:
+               - Trying to access denial_reason_name from DenialReasons table (it doesn't exist there)
+               - Missing the join with DenialReason table
+               - Using wrong join conditions
+        
+
+        Full Database Schema:
+        CREATE TABLE Agency (
+    agency_code SMALLINT PRIMARY KEY,
+    agency_name VARCHAR(100) NOT NULL,
+    agency_abbr VARCHAR(20) NOT NULL
+);
+
+CREATE TABLE LoanType (
+    loan_type SMALLINT PRIMARY KEY,
+    loan_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE PropertyType (
+    property_type SMALLINT PRIMARY KEY,
+    property_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE LoanPurpose (
+    loan_purpose SMALLINT PRIMARY KEY,
+    loan_purpose_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE OwnerOccupancy (
+    owner_occupancy SMALLINT PRIMARY KEY,
+    owner_occupancy_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Preapproval (
+    preapproval SMALLINT PRIMARY KEY,
+    preapproval_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE ActionTaken (
+    action_taken SMALLINT PRIMARY KEY,
+    action_taken_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE MSA (
+    msamd VARCHAR(5) PRIMARY KEY,
+    msamd_name VARCHAR(100)
+);
+
+CREATE TABLE State (
+    state_code CHAR(2) PRIMARY KEY,
+    state_name VARCHAR(100) NOT NULL,
+    state_abbr CHAR(2) NOT NULL
+);
+
+CREATE TABLE County (
+    county_code CHAR(3),
+    state_code CHAR(2),
+    county_name VARCHAR(100) NOT NULL,
+    PRIMARY KEY (county_code, state_code),
+    FOREIGN KEY (state_code) REFERENCES State(state_code)
+);
+
+CREATE TABLE Ethnicity (
+    ethnicity_code SMALLINT PRIMARY KEY,
+    ethnicity_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Race (
+    race_code SMALLINT PRIMARY KEY,
+    race_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Sex (
+    sex_code SMALLINT PRIMARY KEY,
+    sex_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE PurchaserType (
+    purchaser_type SMALLINT PRIMARY KEY,
+    purchaser_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE DenialReason (
+    denial_reason_code SMALLINT PRIMARY KEY,
+    denial_reason_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE HOEPAStatus (
+    hoepa_status SMALLINT PRIMARY KEY,
+    hoepa_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE LienStatus (
+    lien_status SMALLINT PRIMARY KEY,
+    lien_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE EditStatus (
+    edit_status SMALLINT PRIMARY KEY,
+    edit_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Location (
+    location_id SERIAL PRIMARY KEY,
+    msamd VARCHAR(5),
+    state_code CHAR(2),
+    county_code CHAR(3),
+    census_tract_number VARCHAR(8),
+    population INTEGER,
+    minority_population NUMERIC,
+    hud_median_family_income INTEGER,
+    tract_to_msamd_income NUMERIC,
+    number_of_owner_occupied_units INTEGER,
+    number_of_1_to_4_family_units INTEGER,
+    FOREIGN KEY (msamd) REFERENCES MSA(msamd),
+    FOREIGN KEY (state_code) REFERENCES State(state_code),
+    FOREIGN KEY (county_code, state_code) REFERENCES County(county_code, state_code)
+);
+
+CREATE TABLE RespondentAgency (
+    as_of_year INTEGER,
+    respondent_id VARCHAR(10),
+    agency_code SMALLINT,
+    PRIMARY KEY (as_of_year, respondent_id),
+    FOREIGN KEY (agency_code) REFERENCES Agency(agency_code)
+);
+
+CREATE TABLE LoanApplication (
+    ID INTEGER PRIMARY KEY,
+    as_of_year INTEGER NOT NULL,
+    respondent_id VARCHAR(10) NOT NULL,
+    loan_type SMALLINT NOT NULL,
+    property_type SMALLINT NOT NULL,
+    loan_purpose SMALLINT NOT NULL,
+    owner_occupancy SMALLINT NOT NULL,
+    loan_amount_000s NUMERIC,
+    preapproval SMALLINT NOT NULL,
+    action_taken SMALLINT NOT NULL,
+    location_id INTEGER NOT NULL,
+    applicant_ethnicity SMALLINT NOT NULL,
+    co_applicant_ethnicity SMALLINT,
+    applicant_sex SMALLINT NOT NULL,
+    co_applicant_sex SMALLINT,
+    applicant_income_000s NUMERIC,
+    purchaser_type SMALLINT,
+    rate_spread VARCHAR(10),
+    hoepa_status SMALLINT,
+    lien_status SMALLINT,
+    edit_status SMALLINT,
+    sequence_number VARCHAR(20),
+    application_date_indicator SMALLINT,
+    FOREIGN KEY (as_of_year, respondent_id) REFERENCES RespondentAgency(as_of_year, respondent_id),
+    FOREIGN KEY (loan_type) REFERENCES LoanType(loan_type),
+    FOREIGN KEY (property_type) REFERENCES PropertyType(property_type),
+    FOREIGN KEY (loan_purpose) REFERENCES LoanPurpose(loan_purpose),
+    FOREIGN KEY (owner_occupancy) REFERENCES OwnerOccupancy(owner_occupancy),
+    FOREIGN KEY (preapproval) REFERENCES Preapproval(preapproval),
+    FOREIGN KEY (action_taken) REFERENCES ActionTaken(action_taken),
+    FOREIGN KEY (location_id) REFERENCES Location(location_id),
+    FOREIGN KEY (applicant_ethnicity) REFERENCES Ethnicity(ethnicity_code),
+    FOREIGN KEY (co_applicant_ethnicity) REFERENCES Ethnicity(ethnicity_code),
+    FOREIGN KEY (applicant_sex) REFERENCES Sex(sex_code),
+    FOREIGN KEY (co_applicant_sex) REFERENCES Sex(sex_code),
+    FOREIGN KEY (purchaser_type) REFERENCES PurchaserType(purchaser_type),
+    FOREIGN KEY (hoepa_status) REFERENCES HOEPAStatus(hoepa_status),
+    FOREIGN KEY (lien_status) REFERENCES LienStatus(lien_status),
+    FOREIGN KEY (edit_status) REFERENCES EditStatus(edit_status)
+);
+
+CREATE TABLE ApplicantRace (
+    ID INTEGER,
+    race_number SMALLINT,
+    race_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, race_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (race_code) REFERENCES Race(race_code)
+);
+
+CREATE TABLE CoApplicantRace (
+    ID INTEGER,
+    race_number SMALLINT,
+    race_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, race_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (race_code) REFERENCES Race(race_code)
+);
+
+CREATE TABLE DenialReasons (
+    ID INTEGER,
+    reason_number SMALLINT,
+    denial_reason_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, reason_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (denial_reason_code) REFERENCES DenialReason(denial_reason_code)
+);
+
+
+        Corrected SQL query:
+    
+
+--- LLM Correction Response ---
+ SELECT d.denial_reason_name FROM DenialReasons d ORDER BY COUNT(*) DESC LIMIT 1;
+
+==================== CORRECTION LOG END (Attempt 2) ======================
+
+
+
+==================== CORRECTION LOG START (Attempt 1) ====================
+Timestamp: 04:37:30 PM 05/05/25
+Question: What is the most common loan denial reason? 
+
+--- Original Query ---
+SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons d WHERE d.denial_reason_name != 'None' GROUP BY d.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+
+--- Query Plan/Breakdown ---
+γ(denial_reason_name, COUNT(*))(σ denial_reason_name ≠ 'None' (DenialReasons ⨝ LoanApplication))
+
+TOP(1, 1)(γ(denial_reason_name, COUNT(*)))
+
+This expression first groups the LoanApplication table with the DenialReasons table based on the denial_reason_name, then counts the occurrences of each denial reason name where it is not 'None'. Finally, it takes the top 1 result, which is the most common denial reason.
+
+Note: This expression assumes that the 'None' value is used to indicate no denial reason. If there are multiple most common reasons, this expression will only return one of them. To get all the most common reasons, additional processing might be needed.
+
+--- Failed Query (Attempt {correction_attempts}) ---
+SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons d WHERE d.denial_reason_name != 'None' GROUP BY d.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+
+--- Error Message ---
+Error executing query. Exit status: 1
+Command error output:
+Database error: column d.denial_reason_name does not exist
+LINE 1: SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialRe...
+
+Hints:
+HINT:  Perhaps you meant to reference the column "d.denial_reason_code".
+
+--- Correction Prompt ---
+
+        Fix the SQL query based on the error, original plan, and schema. Pay special attention to the hint in the error message if there is one.
+
+        Instructions:
+        1. Fix the SQL query based on the error message and hints.
+        2. Compare Failed SQL to the Original Plan and Schema.
+        3. Ensure all necessary tables are properly joined, especially for junction tables.
+        4. Use proper table aliases and qualify all column references.
+        5. Maintain the original query's intent as shown in the plan.
+        6. Output only the corrected SQL query, no explanations.
+
+        Original question: What is the most common loan denial reason? 
+
+        Original Plan:
+        γ(denial_reason_name, COUNT(*))(σ denial_reason_name ≠ 'None' (DenialReasons ⨝ LoanApplication))
+
+TOP(1, 1)(γ(denial_reason_name, COUNT(*)))
+
+This expression first groups the LoanApplication table with the DenialReasons table based on the denial_reason_name, then counts the occurrences of each denial reason name where it is not 'None'. Finally, it takes the top 1 result, which is the most common denial reason.
+
+Note: This expression assumes that the 'None' value is used to indicate no denial reason. If there are multiple most common reasons, this expression will only return one of them. To get all the most common reasons, additional processing might be needed.
+
+        Failed SQL query:
+        ```sql
+        SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons d WHERE d.denial_reason_name != 'None' GROUP BY d.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+        ```
+
+        Error message:
+        Error executing query. Exit status: 1
+Command error output:
+Database error: column d.denial_reason_name does not exist
+LINE 1: SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialRe...
+
+Hints:
+HINT:  Perhaps you meant to reference the column "d.denial_reason_code".
+
+        
+            Error Type Hint: Column Not Found.
+            Possible Causes:
+            1. Typo in column name (check schema).
+            2. Column exists in a different table than specified (check JOINs and aliases).
+            3. Trying to access a descriptive field (e.g., `denial_reason_name`) from a junction table (e.g., `DenialReasons`) instead of the lookup table (e.g., `DenialReason`). You MUST join to the lookup table.
+            4. Missing table alias or incorrect alias used.
+            Check the original Query Plan/Breakdown for intended logic.
+        
+            Special Note for DenialReasons Queries:
+            1. DenialReasons is a junction table that connects LoanApplication to DenialReason.
+            2. The table structure is:
+               - DenialReasons: (ID, reason_number, denial_reason_code)
+               - DenialReason: (denial_reason_code, denial_reason_name)
+            3. To get denial reason names, you MUST:
+               - Join DenialReasons with DenialReason using denial_reason_code
+               - Access denial_reason_name from DenialReason table, NOT DenialReasons
+            4. Example correct query structure:
+               ```sql
+               SELECT dr.denial_reason_name, COUNT(*) as count
+               FROM DenialReasons d
+               JOIN DenialReason dr ON d.denial_reason_code = dr.denial_reason_code
+               GROUP BY dr.denial_reason_name
+               ORDER BY count DESC
+               ```
+            5. Common mistakes to avoid:
+               - Trying to access denial_reason_name from DenialReasons table (it doesn't exist there)
+               - Missing the join with DenialReason table
+               - Using wrong join conditions
+        
+
+        Full Database Schema:
+        CREATE TABLE Agency (
+    agency_code SMALLINT PRIMARY KEY,
+    agency_name VARCHAR(100) NOT NULL,
+    agency_abbr VARCHAR(20) NOT NULL
+);
+
+CREATE TABLE LoanType (
+    loan_type SMALLINT PRIMARY KEY,
+    loan_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE PropertyType (
+    property_type SMALLINT PRIMARY KEY,
+    property_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE LoanPurpose (
+    loan_purpose SMALLINT PRIMARY KEY,
+    loan_purpose_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE OwnerOccupancy (
+    owner_occupancy SMALLINT PRIMARY KEY,
+    owner_occupancy_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Preapproval (
+    preapproval SMALLINT PRIMARY KEY,
+    preapproval_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE ActionTaken (
+    action_taken SMALLINT PRIMARY KEY,
+    action_taken_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE MSA (
+    msamd VARCHAR(5) PRIMARY KEY,
+    msamd_name VARCHAR(100)
+);
+
+CREATE TABLE State (
+    state_code CHAR(2) PRIMARY KEY,
+    state_name VARCHAR(100) NOT NULL,
+    state_abbr CHAR(2) NOT NULL
+);
+
+CREATE TABLE County (
+    county_code CHAR(3),
+    state_code CHAR(2),
+    county_name VARCHAR(100) NOT NULL,
+    PRIMARY KEY (county_code, state_code),
+    FOREIGN KEY (state_code) REFERENCES State(state_code)
+);
+
+CREATE TABLE Ethnicity (
+    ethnicity_code SMALLINT PRIMARY KEY,
+    ethnicity_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Race (
+    race_code SMALLINT PRIMARY KEY,
+    race_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Sex (
+    sex_code SMALLINT PRIMARY KEY,
+    sex_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE PurchaserType (
+    purchaser_type SMALLINT PRIMARY KEY,
+    purchaser_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE DenialReason (
+    denial_reason_code SMALLINT PRIMARY KEY,
+    denial_reason_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE HOEPAStatus (
+    hoepa_status SMALLINT PRIMARY KEY,
+    hoepa_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE LienStatus (
+    lien_status SMALLINT PRIMARY KEY,
+    lien_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE EditStatus (
+    edit_status SMALLINT PRIMARY KEY,
+    edit_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Location (
+    location_id SERIAL PRIMARY KEY,
+    msamd VARCHAR(5),
+    state_code CHAR(2),
+    county_code CHAR(3),
+    census_tract_number VARCHAR(8),
+    population INTEGER,
+    minority_population NUMERIC,
+    hud_median_family_income INTEGER,
+    tract_to_msamd_income NUMERIC,
+    number_of_owner_occupied_units INTEGER,
+    number_of_1_to_4_family_units INTEGER,
+    FOREIGN KEY (msamd) REFERENCES MSA(msamd),
+    FOREIGN KEY (state_code) REFERENCES State(state_code),
+    FOREIGN KEY (county_code, state_code) REFERENCES County(county_code, state_code)
+);
+
+CREATE TABLE RespondentAgency (
+    as_of_year INTEGER,
+    respondent_id VARCHAR(10),
+    agency_code SMALLINT,
+    PRIMARY KEY (as_of_year, respondent_id),
+    FOREIGN KEY (agency_code) REFERENCES Agency(agency_code)
+);
+
+CREATE TABLE LoanApplication (
+    ID INTEGER PRIMARY KEY,
+    as_of_year INTEGER NOT NULL,
+    respondent_id VARCHAR(10) NOT NULL,
+    loan_type SMALLINT NOT NULL,
+    property_type SMALLINT NOT NULL,
+    loan_purpose SMALLINT NOT NULL,
+    owner_occupancy SMALLINT NOT NULL,
+    loan_amount_000s NUMERIC,
+    preapproval SMALLINT NOT NULL,
+    action_taken SMALLINT NOT NULL,
+    location_id INTEGER NOT NULL,
+    applicant_ethnicity SMALLINT NOT NULL,
+    co_applicant_ethnicity SMALLINT,
+    applicant_sex SMALLINT NOT NULL,
+    co_applicant_sex SMALLINT,
+    applicant_income_000s NUMERIC,
+    purchaser_type SMALLINT,
+    rate_spread VARCHAR(10),
+    hoepa_status SMALLINT,
+    lien_status SMALLINT,
+    edit_status SMALLINT,
+    sequence_number VARCHAR(20),
+    application_date_indicator SMALLINT,
+    FOREIGN KEY (as_of_year, respondent_id) REFERENCES RespondentAgency(as_of_year, respondent_id),
+    FOREIGN KEY (loan_type) REFERENCES LoanType(loan_type),
+    FOREIGN KEY (property_type) REFERENCES PropertyType(property_type),
+    FOREIGN KEY (loan_purpose) REFERENCES LoanPurpose(loan_purpose),
+    FOREIGN KEY (owner_occupancy) REFERENCES OwnerOccupancy(owner_occupancy),
+    FOREIGN KEY (preapproval) REFERENCES Preapproval(preapproval),
+    FOREIGN KEY (action_taken) REFERENCES ActionTaken(action_taken),
+    FOREIGN KEY (location_id) REFERENCES Location(location_id),
+    FOREIGN KEY (applicant_ethnicity) REFERENCES Ethnicity(ethnicity_code),
+    FOREIGN KEY (co_applicant_ethnicity) REFERENCES Ethnicity(ethnicity_code),
+    FOREIGN KEY (applicant_sex) REFERENCES Sex(sex_code),
+    FOREIGN KEY (co_applicant_sex) REFERENCES Sex(sex_code),
+    FOREIGN KEY (purchaser_type) REFERENCES PurchaserType(purchaser_type),
+    FOREIGN KEY (hoepa_status) REFERENCES HOEPAStatus(hoepa_status),
+    FOREIGN KEY (lien_status) REFERENCES LienStatus(lien_status),
+    FOREIGN KEY (edit_status) REFERENCES EditStatus(edit_status)
+);
+
+CREATE TABLE ApplicantRace (
+    ID INTEGER,
+    race_number SMALLINT,
+    race_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, race_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (race_code) REFERENCES Race(race_code)
+);
+
+CREATE TABLE CoApplicantRace (
+    ID INTEGER,
+    race_number SMALLINT,
+    race_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, race_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (race_code) REFERENCES Race(race_code)
+);
+
+CREATE TABLE DenialReasons (
+    ID INTEGER,
+    reason_number SMALLINT,
+    denial_reason_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, reason_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (denial_reason_code) REFERENCES DenialReason(denial_reason_code)
+);
+
+
+        Corrected SQL query:
+    
+
+--- LLM Correction Response ---
+  SELECT dr.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons d JOIN DenialReason dr ON d.denial_reason_code = dr.denial_reason_code WHERE d.denial_reason_name != 'None' GROUP BY dr.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+
+==================== CORRECTION LOG END (Attempt 1) ======================
+
+
+
+==================== CORRECTION LOG START (Attempt 2) ====================
+Timestamp: 04:37:30 PM 05/05/25
+Question: What is the most common loan denial reason? 
+
+--- Original Query ---
+SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons d WHERE d.denial_reason_name != 'None' GROUP BY d.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+
+--- Query Plan/Breakdown ---
+γ(denial_reason_name, COUNT(*))(σ denial_reason_name ≠ 'None' (DenialReasons ⨝ LoanApplication))
+
+TOP(1, 1)(γ(denial_reason_name, COUNT(*)))
+
+This expression first groups the LoanApplication table with the DenialReasons table based on the denial_reason_name, then counts the occurrences of each denial reason name where it is not 'None'. Finally, it takes the top 1 result, which is the most common denial reason.
+
+Note: This expression assumes that the 'None' value is used to indicate no denial reason. If there are multiple most common reasons, this expression will only return one of them. To get all the most common reasons, additional processing might be needed.
+
+--- Failed Query (Attempt {correction_attempts}) ---
+SELECT dr.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons d JOIN DenialReason dr ON d.denial_reason_code = dr.denial_reason_code WHERE d.denial_reason_name != 'None' GROUP BY dr.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+
+--- Error Message ---
+Error executing query. Exit status: 1
+Command error output:
+Database error: column d.denial_reason_name does not exist
+LINE 1: ....denial_reason_code = dr.denial_reason_code WHERE d.denial_r...
+
+Hints:
+HINT:  Perhaps you meant to reference the column "dr.denial_reason_name".
+
+--- Correction Prompt ---
+
+        Fix the SQL query based on the error, original plan, and schema. Pay special attention to the hint in the error message if there is one.
+
+        Instructions:
+        1. Fix the SQL query based on the error message and hints.
+        2. Compare Failed SQL to the Original Plan and Schema.
+        3. Ensure all necessary tables are properly joined, especially for junction tables.
+        4. Use proper table aliases and qualify all column references.
+        5. Maintain the original query's intent as shown in the plan.
+        6. Output only the corrected SQL query, no explanations.
+
+        Original question: What is the most common loan denial reason? 
+
+        Original Plan:
+        γ(denial_reason_name, COUNT(*))(σ denial_reason_name ≠ 'None' (DenialReasons ⨝ LoanApplication))
+
+TOP(1, 1)(γ(denial_reason_name, COUNT(*)))
+
+This expression first groups the LoanApplication table with the DenialReasons table based on the denial_reason_name, then counts the occurrences of each denial reason name where it is not 'None'. Finally, it takes the top 1 result, which is the most common denial reason.
+
+Note: This expression assumes that the 'None' value is used to indicate no denial reason. If there are multiple most common reasons, this expression will only return one of them. To get all the most common reasons, additional processing might be needed.
+
+        Failed SQL query:
+        ```sql
+        SELECT dr.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons d JOIN DenialReason dr ON d.denial_reason_code = dr.denial_reason_code WHERE d.denial_reason_name != 'None' GROUP BY dr.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+        ```
+
+        Error message:
+        Error executing query. Exit status: 1
+Command error output:
+Database error: column d.denial_reason_name does not exist
+LINE 1: ....denial_reason_code = dr.denial_reason_code WHERE d.denial_r...
+
+Hints:
+HINT:  Perhaps you meant to reference the column "dr.denial_reason_name".
+
+        
+            Error Type Hint: Column Not Found.
+            Possible Causes:
+            1. Typo in column name (check schema).
+            2. Column exists in a different table than specified (check JOINs and aliases).
+            3. Trying to access a descriptive field (e.g., `denial_reason_name`) from a junction table (e.g., `DenialReasons`) instead of the lookup table (e.g., `DenialReason`). You MUST join to the lookup table.
+            4. Missing table alias or incorrect alias used.
+            Check the original Query Plan/Breakdown for intended logic.
+        
+            Special Note for DenialReasons Queries:
+            1. DenialReasons is a junction table that connects LoanApplication to DenialReason.
+            2. The table structure is:
+               - DenialReasons: (ID, reason_number, denial_reason_code)
+               - DenialReason: (denial_reason_code, denial_reason_name)
+            3. To get denial reason names, you MUST:
+               - Join DenialReasons with DenialReason using denial_reason_code
+               - Access denial_reason_name from DenialReason table, NOT DenialReasons
+            4. Example correct query structure:
+               ```sql
+               SELECT dr.denial_reason_name, COUNT(*) as count
+               FROM DenialReasons d
+               JOIN DenialReason dr ON d.denial_reason_code = dr.denial_reason_code
+               GROUP BY dr.denial_reason_name
+               ORDER BY count DESC
+               ```
+            5. Common mistakes to avoid:
+               - Trying to access denial_reason_name from DenialReasons table (it doesn't exist there)
+               - Missing the join with DenialReason table
+               - Using wrong join conditions
+        
+
+        Full Database Schema:
+        CREATE TABLE Agency (
+    agency_code SMALLINT PRIMARY KEY,
+    agency_name VARCHAR(100) NOT NULL,
+    agency_abbr VARCHAR(20) NOT NULL
+);
+
+CREATE TABLE LoanType (
+    loan_type SMALLINT PRIMARY KEY,
+    loan_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE PropertyType (
+    property_type SMALLINT PRIMARY KEY,
+    property_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE LoanPurpose (
+    loan_purpose SMALLINT PRIMARY KEY,
+    loan_purpose_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE OwnerOccupancy (
+    owner_occupancy SMALLINT PRIMARY KEY,
+    owner_occupancy_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Preapproval (
+    preapproval SMALLINT PRIMARY KEY,
+    preapproval_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE ActionTaken (
+    action_taken SMALLINT PRIMARY KEY,
+    action_taken_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE MSA (
+    msamd VARCHAR(5) PRIMARY KEY,
+    msamd_name VARCHAR(100)
+);
+
+CREATE TABLE State (
+    state_code CHAR(2) PRIMARY KEY,
+    state_name VARCHAR(100) NOT NULL,
+    state_abbr CHAR(2) NOT NULL
+);
+
+CREATE TABLE County (
+    county_code CHAR(3),
+    state_code CHAR(2),
+    county_name VARCHAR(100) NOT NULL,
+    PRIMARY KEY (county_code, state_code),
+    FOREIGN KEY (state_code) REFERENCES State(state_code)
+);
+
+CREATE TABLE Ethnicity (
+    ethnicity_code SMALLINT PRIMARY KEY,
+    ethnicity_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Race (
+    race_code SMALLINT PRIMARY KEY,
+    race_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Sex (
+    sex_code SMALLINT PRIMARY KEY,
+    sex_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE PurchaserType (
+    purchaser_type SMALLINT PRIMARY KEY,
+    purchaser_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE DenialReason (
+    denial_reason_code SMALLINT PRIMARY KEY,
+    denial_reason_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE HOEPAStatus (
+    hoepa_status SMALLINT PRIMARY KEY,
+    hoepa_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE LienStatus (
+    lien_status SMALLINT PRIMARY KEY,
+    lien_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE EditStatus (
+    edit_status SMALLINT PRIMARY KEY,
+    edit_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Location (
+    location_id SERIAL PRIMARY KEY,
+    msamd VARCHAR(5),
+    state_code CHAR(2),
+    county_code CHAR(3),
+    census_tract_number VARCHAR(8),
+    population INTEGER,
+    minority_population NUMERIC,
+    hud_median_family_income INTEGER,
+    tract_to_msamd_income NUMERIC,
+    number_of_owner_occupied_units INTEGER,
+    number_of_1_to_4_family_units INTEGER,
+    FOREIGN KEY (msamd) REFERENCES MSA(msamd),
+    FOREIGN KEY (state_code) REFERENCES State(state_code),
+    FOREIGN KEY (county_code, state_code) REFERENCES County(county_code, state_code)
+);
+
+CREATE TABLE RespondentAgency (
+    as_of_year INTEGER,
+    respondent_id VARCHAR(10),
+    agency_code SMALLINT,
+    PRIMARY KEY (as_of_year, respondent_id),
+    FOREIGN KEY (agency_code) REFERENCES Agency(agency_code)
+);
+
+CREATE TABLE LoanApplication (
+    ID INTEGER PRIMARY KEY,
+    as_of_year INTEGER NOT NULL,
+    respondent_id VARCHAR(10) NOT NULL,
+    loan_type SMALLINT NOT NULL,
+    property_type SMALLINT NOT NULL,
+    loan_purpose SMALLINT NOT NULL,
+    owner_occupancy SMALLINT NOT NULL,
+    loan_amount_000s NUMERIC,
+    preapproval SMALLINT NOT NULL,
+    action_taken SMALLINT NOT NULL,
+    location_id INTEGER NOT NULL,
+    applicant_ethnicity SMALLINT NOT NULL,
+    co_applicant_ethnicity SMALLINT,
+    applicant_sex SMALLINT NOT NULL,
+    co_applicant_sex SMALLINT,
+    applicant_income_000s NUMERIC,
+    purchaser_type SMALLINT,
+    rate_spread VARCHAR(10),
+    hoepa_status SMALLINT,
+    lien_status SMALLINT,
+    edit_status SMALLINT,
+    sequence_number VARCHAR(20),
+    application_date_indicator SMALLINT,
+    FOREIGN KEY (as_of_year, respondent_id) REFERENCES RespondentAgency(as_of_year, respondent_id),
+    FOREIGN KEY (loan_type) REFERENCES LoanType(loan_type),
+    FOREIGN KEY (property_type) REFERENCES PropertyType(property_type),
+    FOREIGN KEY (loan_purpose) REFERENCES LoanPurpose(loan_purpose),
+    FOREIGN KEY (owner_occupancy) REFERENCES OwnerOccupancy(owner_occupancy),
+    FOREIGN KEY (preapproval) REFERENCES Preapproval(preapproval),
+    FOREIGN KEY (action_taken) REFERENCES ActionTaken(action_taken),
+    FOREIGN KEY (location_id) REFERENCES Location(location_id),
+    FOREIGN KEY (applicant_ethnicity) REFERENCES Ethnicity(ethnicity_code),
+    FOREIGN KEY (co_applicant_ethnicity) REFERENCES Ethnicity(ethnicity_code),
+    FOREIGN KEY (applicant_sex) REFERENCES Sex(sex_code),
+    FOREIGN KEY (co_applicant_sex) REFERENCES Sex(sex_code),
+    FOREIGN KEY (purchaser_type) REFERENCES PurchaserType(purchaser_type),
+    FOREIGN KEY (hoepa_status) REFERENCES HOEPAStatus(hoepa_status),
+    FOREIGN KEY (lien_status) REFERENCES LienStatus(lien_status),
+    FOREIGN KEY (edit_status) REFERENCES EditStatus(edit_status)
+);
+
+CREATE TABLE ApplicantRace (
+    ID INTEGER,
+    race_number SMALLINT,
+    race_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, race_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (race_code) REFERENCES Race(race_code)
+);
+
+CREATE TABLE CoApplicantRace (
+    ID INTEGER,
+    race_number SMALLINT,
+    race_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, race_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (race_code) REFERENCES Race(race_code)
+);
+
+CREATE TABLE DenialReasons (
+    ID INTEGER,
+    reason_number SMALLINT,
+    denial_reason_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, reason_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (denial_reason_code) REFERENCES DenialReason(denial_reason_code)
+);
+
+
+        Corrected SQL query:
+    
+
+--- LLM Correction Response ---
+ SELECT dr.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons d JOIN DenialReason dr ON d.denial_reason_code = dr.denial_reason_code WHERE d.denial_reason_name != 'None' GROUP BY dr.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+
+==================== CORRECTION LOG END (Attempt 2) ======================
+
+
+
+==================== CORRECTION LOG START (Attempt 1) ====================
+Timestamp: 04:46:47 PM 05/05/25
+Question: What is the most common loan denial reason? 
+
+--- Original Query ---
+SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons d WHERE d.denial_reason_name != 'None' GROUP BY d.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+
+--- Query Plan/Breakdown ---
+γ(denial_reason_name, COUNT(*))(σ denial_reason_name ≠ 'None' (DenialReasons ⨝ LoanApplication))
+
+TOP(1, 1)(γ(denial_reason_name, COUNT(*)))
+
+This expression first groups the LoanApplication table with the DenialReasons table based on the denial_reason_name, then counts the occurrences of each denial reason name where it is not 'None'. Finally, it takes the top 1 result, which is the most common denial reason.
+
+Note: This expression assumes that the 'None' value is used to indicate no denial reason. If there are multiple most common reasons, this expression will only return one of them. To get all the most common reasons, additional processing might be needed.
+
+--- Failed Query (Attempt {correction_attempts}) ---
+SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons d WHERE d.denial_reason_name != 'None' GROUP BY d.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+
+--- Error Message ---
+Error executing query. Exit status: 1
+Command error output:
+Database error: column d.denial_reason_name does not exist
+LINE 1: SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialRe...
+
+Hints:
+HINT:  Perhaps you meant to reference the column "d.denial_reason_code".
+
+--- Correction Prompt ---
+
+        Fix the SQL query based on the error, original plan, and schema. Pay special attention to the hint in the error message if there is one.
+
+        Instructions:
+        1. Fix the SQL query based on the error message and hints.
+        2. Compare Failed SQL to the Original Plan and Schema.
+        3. Ensure all necessary tables are properly joined, especially for junction tables.
+        4. Use proper table aliases and qualify all column references.
+        5. Maintain the original query's intent as shown in the plan.
+        6. Output only the corrected SQL query, no explanations.
+
+        Original question: What is the most common loan denial reason? 
+
+        Original Plan:
+        γ(denial_reason_name, COUNT(*))(σ denial_reason_name ≠ 'None' (DenialReasons ⨝ LoanApplication))
+
+TOP(1, 1)(γ(denial_reason_name, COUNT(*)))
+
+This expression first groups the LoanApplication table with the DenialReasons table based on the denial_reason_name, then counts the occurrences of each denial reason name where it is not 'None'. Finally, it takes the top 1 result, which is the most common denial reason.
+
+Note: This expression assumes that the 'None' value is used to indicate no denial reason. If there are multiple most common reasons, this expression will only return one of them. To get all the most common reasons, additional processing might be needed.
+
+        Failed SQL query:
+        ```sql
+        SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons d WHERE d.denial_reason_name != 'None' GROUP BY d.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+        ```
+
+        Error message:
+        Error executing query. Exit status: 1
+Command error output:
+Database error: column d.denial_reason_name does not exist
+LINE 1: SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialRe...
+
+Hints:
+HINT:  Perhaps you meant to reference the column "d.denial_reason_code".
+
+        
+            Error Type Hint: Column Not Found.
+            Possible Causes:
+            1. Typo in column name (check schema).
+            2. Column exists in a different table than specified (check JOINs and aliases).
+            3. Trying to access a descriptive field (e.g., `denial_reason_name`) from a junction table (e.g., `DenialReasons`) instead of the lookup table (e.g., `DenialReason`). You MUST join to the lookup table.
+            4. Missing table alias or incorrect alias used.
+            Check the original Query Plan/Breakdown for intended logic.
+        
+            DenialReasons Query Pattern:
+            1. DenialReasons (drs) is a junction table
+            2. Must join with DenialReason (dr) on denial_reason_code
+            3. Correct query structure:
+               SELECT dr.denial_reason_name, COUNT(*) 
+               FROM DenialReasons drs 
+               JOIN DenialReason dr ON drs.denial_reason_code = dr.denial_reason_code
+               GROUP BY dr.denial_reason_name
+               ORDER BY COUNT(*) DESC
+        
+
+        Full Database Schema:
+        CREATE TABLE Agency (
+    agency_code SMALLINT PRIMARY KEY,
+    agency_name VARCHAR(100) NOT NULL,
+    agency_abbr VARCHAR(20) NOT NULL
+);
+
+CREATE TABLE LoanType (
+    loan_type SMALLINT PRIMARY KEY,
+    loan_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE PropertyType (
+    property_type SMALLINT PRIMARY KEY,
+    property_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE LoanPurpose (
+    loan_purpose SMALLINT PRIMARY KEY,
+    loan_purpose_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE OwnerOccupancy (
+    owner_occupancy SMALLINT PRIMARY KEY,
+    owner_occupancy_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Preapproval (
+    preapproval SMALLINT PRIMARY KEY,
+    preapproval_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE ActionTaken (
+    action_taken SMALLINT PRIMARY KEY,
+    action_taken_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE MSA (
+    msamd VARCHAR(5) PRIMARY KEY,
+    msamd_name VARCHAR(100)
+);
+
+CREATE TABLE State (
+    state_code CHAR(2) PRIMARY KEY,
+    state_name VARCHAR(100) NOT NULL,
+    state_abbr CHAR(2) NOT NULL
+);
+
+CREATE TABLE County (
+    county_code CHAR(3),
+    state_code CHAR(2),
+    county_name VARCHAR(100) NOT NULL,
+    PRIMARY KEY (county_code, state_code),
+    FOREIGN KEY (state_code) REFERENCES State(state_code)
+);
+
+CREATE TABLE Ethnicity (
+    ethnicity_code SMALLINT PRIMARY KEY,
+    ethnicity_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Race (
+    race_code SMALLINT PRIMARY KEY,
+    race_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Sex (
+    sex_code SMALLINT PRIMARY KEY,
+    sex_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE PurchaserType (
+    purchaser_type SMALLINT PRIMARY KEY,
+    purchaser_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE DenialReason (
+    denial_reason_code SMALLINT PRIMARY KEY,
+    denial_reason_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE HOEPAStatus (
+    hoepa_status SMALLINT PRIMARY KEY,
+    hoepa_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE LienStatus (
+    lien_status SMALLINT PRIMARY KEY,
+    lien_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE EditStatus (
+    edit_status SMALLINT PRIMARY KEY,
+    edit_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Location (
+    location_id SERIAL PRIMARY KEY,
+    msamd VARCHAR(5),
+    state_code CHAR(2),
+    county_code CHAR(3),
+    census_tract_number VARCHAR(8),
+    population INTEGER,
+    minority_population NUMERIC,
+    hud_median_family_income INTEGER,
+    tract_to_msamd_income NUMERIC,
+    number_of_owner_occupied_units INTEGER,
+    number_of_1_to_4_family_units INTEGER,
+    FOREIGN KEY (msamd) REFERENCES MSA(msamd),
+    FOREIGN KEY (state_code) REFERENCES State(state_code),
+    FOREIGN KEY (county_code, state_code) REFERENCES County(county_code, state_code)
+);
+
+CREATE TABLE RespondentAgency (
+    as_of_year INTEGER,
+    respondent_id VARCHAR(10),
+    agency_code SMALLINT,
+    PRIMARY KEY (as_of_year, respondent_id),
+    FOREIGN KEY (agency_code) REFERENCES Agency(agency_code)
+);
+
+CREATE TABLE LoanApplication (
+    ID INTEGER PRIMARY KEY,
+    as_of_year INTEGER NOT NULL,
+    respondent_id VARCHAR(10) NOT NULL,
+    loan_type SMALLINT NOT NULL,
+    property_type SMALLINT NOT NULL,
+    loan_purpose SMALLINT NOT NULL,
+    owner_occupancy SMALLINT NOT NULL,
+    loan_amount_000s NUMERIC,
+    preapproval SMALLINT NOT NULL,
+    action_taken SMALLINT NOT NULL,
+    location_id INTEGER NOT NULL,
+    applicant_ethnicity SMALLINT NOT NULL,
+    co_applicant_ethnicity SMALLINT,
+    applicant_sex SMALLINT NOT NULL,
+    co_applicant_sex SMALLINT,
+    applicant_income_000s NUMERIC,
+    purchaser_type SMALLINT,
+    rate_spread VARCHAR(10),
+    hoepa_status SMALLINT,
+    lien_status SMALLINT,
+    edit_status SMALLINT,
+    sequence_number VARCHAR(20),
+    application_date_indicator SMALLINT,
+    FOREIGN KEY (as_of_year, respondent_id) REFERENCES RespondentAgency(as_of_year, respondent_id),
+    FOREIGN KEY (loan_type) REFERENCES LoanType(loan_type),
+    FOREIGN KEY (property_type) REFERENCES PropertyType(property_type),
+    FOREIGN KEY (loan_purpose) REFERENCES LoanPurpose(loan_purpose),
+    FOREIGN KEY (owner_occupancy) REFERENCES OwnerOccupancy(owner_occupancy),
+    FOREIGN KEY (preapproval) REFERENCES Preapproval(preapproval),
+    FOREIGN KEY (action_taken) REFERENCES ActionTaken(action_taken),
+    FOREIGN KEY (location_id) REFERENCES Location(location_id),
+    FOREIGN KEY (applicant_ethnicity) REFERENCES Ethnicity(ethnicity_code),
+    FOREIGN KEY (co_applicant_ethnicity) REFERENCES Ethnicity(ethnicity_code),
+    FOREIGN KEY (applicant_sex) REFERENCES Sex(sex_code),
+    FOREIGN KEY (co_applicant_sex) REFERENCES Sex(sex_code),
+    FOREIGN KEY (purchaser_type) REFERENCES PurchaserType(purchaser_type),
+    FOREIGN KEY (hoepa_status) REFERENCES HOEPAStatus(hoepa_status),
+    FOREIGN KEY (lien_status) REFERENCES LienStatus(lien_status),
+    FOREIGN KEY (edit_status) REFERENCES EditStatus(edit_status)
+);
+
+CREATE TABLE ApplicantRace (
+    ID INTEGER,
+    race_number SMALLINT,
+    race_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, race_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (race_code) REFERENCES Race(race_code)
+);
+
+CREATE TABLE CoApplicantRace (
+    ID INTEGER,
+    race_number SMALLINT,
+    race_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, race_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (race_code) REFERENCES Race(race_code)
+);
+
+CREATE TABLE DenialReasons (
+    ID INTEGER,
+    reason_number SMALLINT,
+    denial_reason_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, reason_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (denial_reason_code) REFERENCES DenialReason(denial_reason_code)
+);
+
+
+        Corrected SQL query:
+    
+
+--- LLM Correction Response ---
+ SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons d WHERE d.denial_reason_name != 'None' GROUP BY d.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+
+==================== CORRECTION LOG END (Attempt 1) ======================
+
+
+
+==================== CORRECTION LOG START (Attempt 2) ====================
+Timestamp: 04:46:47 PM 05/05/25
+Question: What is the most common loan denial reason? 
+
+--- Original Query ---
+SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons d WHERE d.denial_reason_name != 'None' GROUP BY d.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+
+--- Query Plan/Breakdown ---
+γ(denial_reason_name, COUNT(*))(σ denial_reason_name ≠ 'None' (DenialReasons ⨝ LoanApplication))
+
+TOP(1, 1)(γ(denial_reason_name, COUNT(*)))
+
+This expression first groups the LoanApplication table with the DenialReasons table based on the denial_reason_name, then counts the occurrences of each denial reason name where it is not 'None'. Finally, it takes the top 1 result, which is the most common denial reason.
+
+Note: This expression assumes that the 'None' value is used to indicate no denial reason. If there are multiple most common reasons, this expression will only return one of them. To get all the most common reasons, additional processing might be needed.
+
+--- Failed Query (Attempt {correction_attempts}) ---
+SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons d WHERE d.denial_reason_name != 'None' GROUP BY d.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+
+--- Error Message ---
+Error executing query. Exit status: 1
+Command error output:
+Database error: column d.denial_reason_name does not exist
+LINE 1: SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialRe...
+
+Hints:
+HINT:  Perhaps you meant to reference the column "d.denial_reason_code".
+
+--- Correction Prompt ---
+
+        Fix the SQL query based on the error, original plan, and schema. Pay special attention to the hint in the error message if there is one.
+
+        Instructions:
+        1. Fix the SQL query based on the error message and hints.
+        2. Compare Failed SQL to the Original Plan and Schema.
+        3. Ensure all necessary tables are properly joined, especially for junction tables.
+        4. Use proper table aliases and qualify all column references.
+        5. Maintain the original query's intent as shown in the plan.
+        6. Output only the corrected SQL query, no explanations.
+
+        Original question: What is the most common loan denial reason? 
+
+        Original Plan:
+        γ(denial_reason_name, COUNT(*))(σ denial_reason_name ≠ 'None' (DenialReasons ⨝ LoanApplication))
+
+TOP(1, 1)(γ(denial_reason_name, COUNT(*)))
+
+This expression first groups the LoanApplication table with the DenialReasons table based on the denial_reason_name, then counts the occurrences of each denial reason name where it is not 'None'. Finally, it takes the top 1 result, which is the most common denial reason.
+
+Note: This expression assumes that the 'None' value is used to indicate no denial reason. If there are multiple most common reasons, this expression will only return one of them. To get all the most common reasons, additional processing might be needed.
+
+        Failed SQL query:
+        ```sql
+        SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons d WHERE d.denial_reason_name != 'None' GROUP BY d.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+        ```
+
+        Error message:
+        Error executing query. Exit status: 1
+Command error output:
+Database error: column d.denial_reason_name does not exist
+LINE 1: SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialRe...
+
+Hints:
+HINT:  Perhaps you meant to reference the column "d.denial_reason_code".
+
+        
+            Error Type Hint: Column Not Found.
+            Possible Causes:
+            1. Typo in column name (check schema).
+            2. Column exists in a different table than specified (check JOINs and aliases).
+            3. Trying to access a descriptive field (e.g., `denial_reason_name`) from a junction table (e.g., `DenialReasons`) instead of the lookup table (e.g., `DenialReason`). You MUST join to the lookup table.
+            4. Missing table alias or incorrect alias used.
+            Check the original Query Plan/Breakdown for intended logic.
+        
+            DenialReasons Query Pattern:
+            1. DenialReasons (drs) is a junction table
+            2. Must join with DenialReason (dr) on denial_reason_code
+            3. Correct query structure:
+               SELECT dr.denial_reason_name, COUNT(*) 
+               FROM DenialReasons drs 
+               JOIN DenialReason dr ON drs.denial_reason_code = dr.denial_reason_code
+               GROUP BY dr.denial_reason_name
+               ORDER BY COUNT(*) DESC
+        
+
+        Full Database Schema:
+        CREATE TABLE Agency (
+    agency_code SMALLINT PRIMARY KEY,
+    agency_name VARCHAR(100) NOT NULL,
+    agency_abbr VARCHAR(20) NOT NULL
+);
+
+CREATE TABLE LoanType (
+    loan_type SMALLINT PRIMARY KEY,
+    loan_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE PropertyType (
+    property_type SMALLINT PRIMARY KEY,
+    property_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE LoanPurpose (
+    loan_purpose SMALLINT PRIMARY KEY,
+    loan_purpose_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE OwnerOccupancy (
+    owner_occupancy SMALLINT PRIMARY KEY,
+    owner_occupancy_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Preapproval (
+    preapproval SMALLINT PRIMARY KEY,
+    preapproval_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE ActionTaken (
+    action_taken SMALLINT PRIMARY KEY,
+    action_taken_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE MSA (
+    msamd VARCHAR(5) PRIMARY KEY,
+    msamd_name VARCHAR(100)
+);
+
+CREATE TABLE State (
+    state_code CHAR(2) PRIMARY KEY,
+    state_name VARCHAR(100) NOT NULL,
+    state_abbr CHAR(2) NOT NULL
+);
+
+CREATE TABLE County (
+    county_code CHAR(3),
+    state_code CHAR(2),
+    county_name VARCHAR(100) NOT NULL,
+    PRIMARY KEY (county_code, state_code),
+    FOREIGN KEY (state_code) REFERENCES State(state_code)
+);
+
+CREATE TABLE Ethnicity (
+    ethnicity_code SMALLINT PRIMARY KEY,
+    ethnicity_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Race (
+    race_code SMALLINT PRIMARY KEY,
+    race_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Sex (
+    sex_code SMALLINT PRIMARY KEY,
+    sex_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE PurchaserType (
+    purchaser_type SMALLINT PRIMARY KEY,
+    purchaser_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE DenialReason (
+    denial_reason_code SMALLINT PRIMARY KEY,
+    denial_reason_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE HOEPAStatus (
+    hoepa_status SMALLINT PRIMARY KEY,
+    hoepa_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE LienStatus (
+    lien_status SMALLINT PRIMARY KEY,
+    lien_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE EditStatus (
+    edit_status SMALLINT PRIMARY KEY,
+    edit_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Location (
+    location_id SERIAL PRIMARY KEY,
+    msamd VARCHAR(5),
+    state_code CHAR(2),
+    county_code CHAR(3),
+    census_tract_number VARCHAR(8),
+    population INTEGER,
+    minority_population NUMERIC,
+    hud_median_family_income INTEGER,
+    tract_to_msamd_income NUMERIC,
+    number_of_owner_occupied_units INTEGER,
+    number_of_1_to_4_family_units INTEGER,
+    FOREIGN KEY (msamd) REFERENCES MSA(msamd),
+    FOREIGN KEY (state_code) REFERENCES State(state_code),
+    FOREIGN KEY (county_code, state_code) REFERENCES County(county_code, state_code)
+);
+
+CREATE TABLE RespondentAgency (
+    as_of_year INTEGER,
+    respondent_id VARCHAR(10),
+    agency_code SMALLINT,
+    PRIMARY KEY (as_of_year, respondent_id),
+    FOREIGN KEY (agency_code) REFERENCES Agency(agency_code)
+);
+
+CREATE TABLE LoanApplication (
+    ID INTEGER PRIMARY KEY,
+    as_of_year INTEGER NOT NULL,
+    respondent_id VARCHAR(10) NOT NULL,
+    loan_type SMALLINT NOT NULL,
+    property_type SMALLINT NOT NULL,
+    loan_purpose SMALLINT NOT NULL,
+    owner_occupancy SMALLINT NOT NULL,
+    loan_amount_000s NUMERIC,
+    preapproval SMALLINT NOT NULL,
+    action_taken SMALLINT NOT NULL,
+    location_id INTEGER NOT NULL,
+    applicant_ethnicity SMALLINT NOT NULL,
+    co_applicant_ethnicity SMALLINT,
+    applicant_sex SMALLINT NOT NULL,
+    co_applicant_sex SMALLINT,
+    applicant_income_000s NUMERIC,
+    purchaser_type SMALLINT,
+    rate_spread VARCHAR(10),
+    hoepa_status SMALLINT,
+    lien_status SMALLINT,
+    edit_status SMALLINT,
+    sequence_number VARCHAR(20),
+    application_date_indicator SMALLINT,
+    FOREIGN KEY (as_of_year, respondent_id) REFERENCES RespondentAgency(as_of_year, respondent_id),
+    FOREIGN KEY (loan_type) REFERENCES LoanType(loan_type),
+    FOREIGN KEY (property_type) REFERENCES PropertyType(property_type),
+    FOREIGN KEY (loan_purpose) REFERENCES LoanPurpose(loan_purpose),
+    FOREIGN KEY (owner_occupancy) REFERENCES OwnerOccupancy(owner_occupancy),
+    FOREIGN KEY (preapproval) REFERENCES Preapproval(preapproval),
+    FOREIGN KEY (action_taken) REFERENCES ActionTaken(action_taken),
+    FOREIGN KEY (location_id) REFERENCES Location(location_id),
+    FOREIGN KEY (applicant_ethnicity) REFERENCES Ethnicity(ethnicity_code),
+    FOREIGN KEY (co_applicant_ethnicity) REFERENCES Ethnicity(ethnicity_code),
+    FOREIGN KEY (applicant_sex) REFERENCES Sex(sex_code),
+    FOREIGN KEY (co_applicant_sex) REFERENCES Sex(sex_code),
+    FOREIGN KEY (purchaser_type) REFERENCES PurchaserType(purchaser_type),
+    FOREIGN KEY (hoepa_status) REFERENCES HOEPAStatus(hoepa_status),
+    FOREIGN KEY (lien_status) REFERENCES LienStatus(lien_status),
+    FOREIGN KEY (edit_status) REFERENCES EditStatus(edit_status)
+);
+
+CREATE TABLE ApplicantRace (
+    ID INTEGER,
+    race_number SMALLINT,
+    race_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, race_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (race_code) REFERENCES Race(race_code)
+);
+
+CREATE TABLE CoApplicantRace (
+    ID INTEGER,
+    race_number SMALLINT,
+    race_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, race_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (race_code) REFERENCES Race(race_code)
+);
+
+CREATE TABLE DenialReasons (
+    ID INTEGER,
+    reason_number SMALLINT,
+    denial_reason_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, reason_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (denial_reason_code) REFERENCES DenialReason(denial_reason_code)
+);
+
+
+        Corrected SQL query:
+    
+
+--- LLM Correction Response ---
+ SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons d WHERE d.denial_reason_name != 'None' GROUP BY d.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+
+==================== CORRECTION LOG END (Attempt 2) ======================
+
+
+
+==================== CORRECTION LOG START (Attempt 1) ====================
+Timestamp: 04:52:21 PM 05/05/25
+Question: What is the most common loan denial reason? 
+
+--- Original Query ---
+SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons d WHERE d.denial_reason_name != 'None' GROUP BY d.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+
+--- Query Plan/Breakdown ---
+γ(denial_reason_name, COUNT(*))(σ denial_reason_name ≠ 'None' (DenialReasons ⨝ LoanApplication))
+
+TOP(1, 1)(γ(denial_reason_name, COUNT(*)))
+
+This expression first groups the LoanApplication table with the DenialReasons table based on the denial_reason_name, then counts the occurrences of each denial reason name where it is not 'None'. Finally, it takes the top 1 result, which is the most common denial reason.
+
+Note: This expression assumes that the 'None' value is used to indicate no denial reason. If there are multiple most common reasons, this expression will only return one of them. To get all the most common reasons, additional processing might be needed.
+
+--- Failed Query (Attempt {correction_attempts}) ---
+SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons d WHERE d.denial_reason_name != 'None' GROUP BY d.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+
+--- Error Message ---
+Error executing query. Exit status: 1
+Command error output:
+Database error: column d.denial_reason_name does not exist
+LINE 1: SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialRe...
+
+Hints:
+HINT:  Perhaps you meant to reference the column "d.denial_reason_code".
+
+--- Correction Prompt ---
+
+        Fix the SQL query based on the error, original plan, and schema. Pay special attention to the hint in the error message if there is one.
+
+        Instructions:
+        1. Fix the SQL query based on the error message and hints.
+        2. Compare Failed SQL to the Original Plan and Schema.
+        3. Ensure all necessary tables are properly joined, especially for junction tables.
+        4. Use proper table aliases and qualify all column references.
+        5. Maintain the original query's intent as shown in the plan.
+        6. Output only the corrected SQL query, no explanations.
+
+        Original question: What is the most common loan denial reason? 
+
+        Original Plan:
+        γ(denial_reason_name, COUNT(*))(σ denial_reason_name ≠ 'None' (DenialReasons ⨝ LoanApplication))
+
+TOP(1, 1)(γ(denial_reason_name, COUNT(*)))
+
+This expression first groups the LoanApplication table with the DenialReasons table based on the denial_reason_name, then counts the occurrences of each denial reason name where it is not 'None'. Finally, it takes the top 1 result, which is the most common denial reason.
+
+Note: This expression assumes that the 'None' value is used to indicate no denial reason. If there are multiple most common reasons, this expression will only return one of them. To get all the most common reasons, additional processing might be needed.
+
+        Failed SQL query:
+        ```sql
+        SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons d WHERE d.denial_reason_name != 'None' GROUP BY d.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+        ```
+
+        Error message:
+        Error executing query. Exit status: 1
+Command error output:
+Database error: column d.denial_reason_name does not exist
+LINE 1: SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialRe...
+
+Hints:
+HINT:  Perhaps you meant to reference the column "d.denial_reason_code".
+
+        
+            DenialReasons Query Pattern:
+            1. DenialReasons (drs) is a junction table
+            2. Must join with DenialReason (dr) on denial_reason_code
+            3. Correct query structure:
+               SELECT dr.denial_reason_name, COUNT(*) 
+               FROM DenialReasons drs 
+               JOIN DenialReason dr ON drs.denial_reason_code = dr.denial_reason_code
+               GROUP BY dr.denial_reason_name
+               ORDER BY COUNT(*) DESC
+        
+
+        Full Database Schema:
+        CREATE TABLE Agency (
+    agency_code SMALLINT PRIMARY KEY,
+    agency_name VARCHAR(100) NOT NULL,
+    agency_abbr VARCHAR(20) NOT NULL
+);
+
+CREATE TABLE LoanType (
+    loan_type SMALLINT PRIMARY KEY,
+    loan_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE PropertyType (
+    property_type SMALLINT PRIMARY KEY,
+    property_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE LoanPurpose (
+    loan_purpose SMALLINT PRIMARY KEY,
+    loan_purpose_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE OwnerOccupancy (
+    owner_occupancy SMALLINT PRIMARY KEY,
+    owner_occupancy_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Preapproval (
+    preapproval SMALLINT PRIMARY KEY,
+    preapproval_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE ActionTaken (
+    action_taken SMALLINT PRIMARY KEY,
+    action_taken_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE MSA (
+    msamd VARCHAR(5) PRIMARY KEY,
+    msamd_name VARCHAR(100)
+);
+
+CREATE TABLE State (
+    state_code CHAR(2) PRIMARY KEY,
+    state_name VARCHAR(100) NOT NULL,
+    state_abbr CHAR(2) NOT NULL
+);
+
+CREATE TABLE County (
+    county_code CHAR(3),
+    state_code CHAR(2),
+    county_name VARCHAR(100) NOT NULL,
+    PRIMARY KEY (county_code, state_code),
+    FOREIGN KEY (state_code) REFERENCES State(state_code)
+);
+
+CREATE TABLE Ethnicity (
+    ethnicity_code SMALLINT PRIMARY KEY,
+    ethnicity_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Race (
+    race_code SMALLINT PRIMARY KEY,
+    race_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Sex (
+    sex_code SMALLINT PRIMARY KEY,
+    sex_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE PurchaserType (
+    purchaser_type SMALLINT PRIMARY KEY,
+    purchaser_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE DenialReason (
+    denial_reason_code SMALLINT PRIMARY KEY,
+    denial_reason_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE HOEPAStatus (
+    hoepa_status SMALLINT PRIMARY KEY,
+    hoepa_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE LienStatus (
+    lien_status SMALLINT PRIMARY KEY,
+    lien_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE EditStatus (
+    edit_status SMALLINT PRIMARY KEY,
+    edit_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Location (
+    location_id SERIAL PRIMARY KEY,
+    msamd VARCHAR(5),
+    state_code CHAR(2),
+    county_code CHAR(3),
+    census_tract_number VARCHAR(8),
+    population INTEGER,
+    minority_population NUMERIC,
+    hud_median_family_income INTEGER,
+    tract_to_msamd_income NUMERIC,
+    number_of_owner_occupied_units INTEGER,
+    number_of_1_to_4_family_units INTEGER,
+    FOREIGN KEY (msamd) REFERENCES MSA(msamd),
+    FOREIGN KEY (state_code) REFERENCES State(state_code),
+    FOREIGN KEY (county_code, state_code) REFERENCES County(county_code, state_code)
+);
+
+CREATE TABLE RespondentAgency (
+    as_of_year INTEGER,
+    respondent_id VARCHAR(10),
+    agency_code SMALLINT,
+    PRIMARY KEY (as_of_year, respondent_id),
+    FOREIGN KEY (agency_code) REFERENCES Agency(agency_code)
+);
+
+CREATE TABLE LoanApplication (
+    ID INTEGER PRIMARY KEY,
+    as_of_year INTEGER NOT NULL,
+    respondent_id VARCHAR(10) NOT NULL,
+    loan_type SMALLINT NOT NULL,
+    property_type SMALLINT NOT NULL,
+    loan_purpose SMALLINT NOT NULL,
+    owner_occupancy SMALLINT NOT NULL,
+    loan_amount_000s NUMERIC,
+    preapproval SMALLINT NOT NULL,
+    action_taken SMALLINT NOT NULL,
+    location_id INTEGER NOT NULL,
+    applicant_ethnicity SMALLINT NOT NULL,
+    co_applicant_ethnicity SMALLINT,
+    applicant_sex SMALLINT NOT NULL,
+    co_applicant_sex SMALLINT,
+    applicant_income_000s NUMERIC,
+    purchaser_type SMALLINT,
+    rate_spread VARCHAR(10),
+    hoepa_status SMALLINT,
+    lien_status SMALLINT,
+    edit_status SMALLINT,
+    sequence_number VARCHAR(20),
+    application_date_indicator SMALLINT,
+    FOREIGN KEY (as_of_year, respondent_id) REFERENCES RespondentAgency(as_of_year, respondent_id),
+    FOREIGN KEY (loan_type) REFERENCES LoanType(loan_type),
+    FOREIGN KEY (property_type) REFERENCES PropertyType(property_type),
+    FOREIGN KEY (loan_purpose) REFERENCES LoanPurpose(loan_purpose),
+    FOREIGN KEY (owner_occupancy) REFERENCES OwnerOccupancy(owner_occupancy),
+    FOREIGN KEY (preapproval) REFERENCES Preapproval(preapproval),
+    FOREIGN KEY (action_taken) REFERENCES ActionTaken(action_taken),
+    FOREIGN KEY (location_id) REFERENCES Location(location_id),
+    FOREIGN KEY (applicant_ethnicity) REFERENCES Ethnicity(ethnicity_code),
+    FOREIGN KEY (co_applicant_ethnicity) REFERENCES Ethnicity(ethnicity_code),
+    FOREIGN KEY (applicant_sex) REFERENCES Sex(sex_code),
+    FOREIGN KEY (co_applicant_sex) REFERENCES Sex(sex_code),
+    FOREIGN KEY (purchaser_type) REFERENCES PurchaserType(purchaser_type),
+    FOREIGN KEY (hoepa_status) REFERENCES HOEPAStatus(hoepa_status),
+    FOREIGN KEY (lien_status) REFERENCES LienStatus(lien_status),
+    FOREIGN KEY (edit_status) REFERENCES EditStatus(edit_status)
+);
+
+CREATE TABLE ApplicantRace (
+    ID INTEGER,
+    race_number SMALLINT,
+    race_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, race_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (race_code) REFERENCES Race(race_code)
+);
+
+CREATE TABLE CoApplicantRace (
+    ID INTEGER,
+    race_number SMALLINT,
+    race_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, race_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (race_code) REFERENCES Race(race_code)
+);
+
+CREATE TABLE DenialReasons (
+    ID INTEGER,
+    reason_number SMALLINT,
+    denial_reason_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, reason_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (denial_reason_code) REFERENCES DenialReason(denial_reason_code)
+);
+
+        Corrected SQL query:
+    
+
+--- LLM Correction Response ---
+  SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons d WHERE d.denial_reason_name != 'None' GROUP BY d.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+
+==================== CORRECTION LOG END (Attempt 1) ======================
+
+
+
+==================== CORRECTION LOG START (Attempt 2) ====================
+Timestamp: 04:52:21 PM 05/05/25
+Question: What is the most common loan denial reason? 
+
+--- Original Query ---
+SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons d WHERE d.denial_reason_name != 'None' GROUP BY d.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+
+--- Query Plan/Breakdown ---
+γ(denial_reason_name, COUNT(*))(σ denial_reason_name ≠ 'None' (DenialReasons ⨝ LoanApplication))
+
+TOP(1, 1)(γ(denial_reason_name, COUNT(*)))
+
+This expression first groups the LoanApplication table with the DenialReasons table based on the denial_reason_name, then counts the occurrences of each denial reason name where it is not 'None'. Finally, it takes the top 1 result, which is the most common denial reason.
+
+Note: This expression assumes that the 'None' value is used to indicate no denial reason. If there are multiple most common reasons, this expression will only return one of them. To get all the most common reasons, additional processing might be needed.
+
+--- Failed Query (Attempt {correction_attempts}) ---
+SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons d WHERE d.denial_reason_name != 'None' GROUP BY d.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+
+--- Error Message ---
+Error executing query. Exit status: 1
+Command error output:
+Database error: column d.denial_reason_name does not exist
+LINE 1: SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialRe...
+
+Hints:
+HINT:  Perhaps you meant to reference the column "d.denial_reason_code".
+
+--- Correction Prompt ---
+
+        Fix the SQL query based on the error, original plan, and schema. Pay special attention to the hint in the error message if there is one.
+
+        Instructions:
+        1. Fix the SQL query based on the error message and hints.
+        2. Compare Failed SQL to the Original Plan and Schema.
+        3. Ensure all necessary tables are properly joined, especially for junction tables.
+        4. Use proper table aliases and qualify all column references.
+        5. Maintain the original query's intent as shown in the plan.
+        6. Output only the corrected SQL query, no explanations.
+
+        Original question: What is the most common loan denial reason? 
+
+        Original Plan:
+        γ(denial_reason_name, COUNT(*))(σ denial_reason_name ≠ 'None' (DenialReasons ⨝ LoanApplication))
+
+TOP(1, 1)(γ(denial_reason_name, COUNT(*)))
+
+This expression first groups the LoanApplication table with the DenialReasons table based on the denial_reason_name, then counts the occurrences of each denial reason name where it is not 'None'. Finally, it takes the top 1 result, which is the most common denial reason.
+
+Note: This expression assumes that the 'None' value is used to indicate no denial reason. If there are multiple most common reasons, this expression will only return one of them. To get all the most common reasons, additional processing might be needed.
+
+        Failed SQL query:
+        ```sql
+        SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons d WHERE d.denial_reason_name != 'None' GROUP BY d.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+        ```
+
+        Error message:
+        Error executing query. Exit status: 1
+Command error output:
+Database error: column d.denial_reason_name does not exist
+LINE 1: SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialRe...
+
+Hints:
+HINT:  Perhaps you meant to reference the column "d.denial_reason_code".
+
+        
+            DenialReasons Query Pattern:
+            1. DenialReasons (drs) is a junction table
+            2. Must join with DenialReason (dr) on denial_reason_code
+            3. Correct query structure:
+               SELECT dr.denial_reason_name, COUNT(*) 
+               FROM DenialReasons drs 
+               JOIN DenialReason dr ON drs.denial_reason_code = dr.denial_reason_code
+               GROUP BY dr.denial_reason_name
+               ORDER BY COUNT(*) DESC
+        
+
+        Full Database Schema:
+        CREATE TABLE Agency (
+    agency_code SMALLINT PRIMARY KEY,
+    agency_name VARCHAR(100) NOT NULL,
+    agency_abbr VARCHAR(20) NOT NULL
+);
+
+CREATE TABLE LoanType (
+    loan_type SMALLINT PRIMARY KEY,
+    loan_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE PropertyType (
+    property_type SMALLINT PRIMARY KEY,
+    property_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE LoanPurpose (
+    loan_purpose SMALLINT PRIMARY KEY,
+    loan_purpose_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE OwnerOccupancy (
+    owner_occupancy SMALLINT PRIMARY KEY,
+    owner_occupancy_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Preapproval (
+    preapproval SMALLINT PRIMARY KEY,
+    preapproval_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE ActionTaken (
+    action_taken SMALLINT PRIMARY KEY,
+    action_taken_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE MSA (
+    msamd VARCHAR(5) PRIMARY KEY,
+    msamd_name VARCHAR(100)
+);
+
+CREATE TABLE State (
+    state_code CHAR(2) PRIMARY KEY,
+    state_name VARCHAR(100) NOT NULL,
+    state_abbr CHAR(2) NOT NULL
+);
+
+CREATE TABLE County (
+    county_code CHAR(3),
+    state_code CHAR(2),
+    county_name VARCHAR(100) NOT NULL,
+    PRIMARY KEY (county_code, state_code),
+    FOREIGN KEY (state_code) REFERENCES State(state_code)
+);
+
+CREATE TABLE Ethnicity (
+    ethnicity_code SMALLINT PRIMARY KEY,
+    ethnicity_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Race (
+    race_code SMALLINT PRIMARY KEY,
+    race_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Sex (
+    sex_code SMALLINT PRIMARY KEY,
+    sex_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE PurchaserType (
+    purchaser_type SMALLINT PRIMARY KEY,
+    purchaser_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE DenialReason (
+    denial_reason_code SMALLINT PRIMARY KEY,
+    denial_reason_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE HOEPAStatus (
+    hoepa_status SMALLINT PRIMARY KEY,
+    hoepa_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE LienStatus (
+    lien_status SMALLINT PRIMARY KEY,
+    lien_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE EditStatus (
+    edit_status SMALLINT PRIMARY KEY,
+    edit_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Location (
+    location_id SERIAL PRIMARY KEY,
+    msamd VARCHAR(5),
+    state_code CHAR(2),
+    county_code CHAR(3),
+    census_tract_number VARCHAR(8),
+    population INTEGER,
+    minority_population NUMERIC,
+    hud_median_family_income INTEGER,
+    tract_to_msamd_income NUMERIC,
+    number_of_owner_occupied_units INTEGER,
+    number_of_1_to_4_family_units INTEGER,
+    FOREIGN KEY (msamd) REFERENCES MSA(msamd),
+    FOREIGN KEY (state_code) REFERENCES State(state_code),
+    FOREIGN KEY (county_code, state_code) REFERENCES County(county_code, state_code)
+);
+
+CREATE TABLE RespondentAgency (
+    as_of_year INTEGER,
+    respondent_id VARCHAR(10),
+    agency_code SMALLINT,
+    PRIMARY KEY (as_of_year, respondent_id),
+    FOREIGN KEY (agency_code) REFERENCES Agency(agency_code)
+);
+
+CREATE TABLE LoanApplication (
+    ID INTEGER PRIMARY KEY,
+    as_of_year INTEGER NOT NULL,
+    respondent_id VARCHAR(10) NOT NULL,
+    loan_type SMALLINT NOT NULL,
+    property_type SMALLINT NOT NULL,
+    loan_purpose SMALLINT NOT NULL,
+    owner_occupancy SMALLINT NOT NULL,
+    loan_amount_000s NUMERIC,
+    preapproval SMALLINT NOT NULL,
+    action_taken SMALLINT NOT NULL,
+    location_id INTEGER NOT NULL,
+    applicant_ethnicity SMALLINT NOT NULL,
+    co_applicant_ethnicity SMALLINT,
+    applicant_sex SMALLINT NOT NULL,
+    co_applicant_sex SMALLINT,
+    applicant_income_000s NUMERIC,
+    purchaser_type SMALLINT,
+    rate_spread VARCHAR(10),
+    hoepa_status SMALLINT,
+    lien_status SMALLINT,
+    edit_status SMALLINT,
+    sequence_number VARCHAR(20),
+    application_date_indicator SMALLINT,
+    FOREIGN KEY (as_of_year, respondent_id) REFERENCES RespondentAgency(as_of_year, respondent_id),
+    FOREIGN KEY (loan_type) REFERENCES LoanType(loan_type),
+    FOREIGN KEY (property_type) REFERENCES PropertyType(property_type),
+    FOREIGN KEY (loan_purpose) REFERENCES LoanPurpose(loan_purpose),
+    FOREIGN KEY (owner_occupancy) REFERENCES OwnerOccupancy(owner_occupancy),
+    FOREIGN KEY (preapproval) REFERENCES Preapproval(preapproval),
+    FOREIGN KEY (action_taken) REFERENCES ActionTaken(action_taken),
+    FOREIGN KEY (location_id) REFERENCES Location(location_id),
+    FOREIGN KEY (applicant_ethnicity) REFERENCES Ethnicity(ethnicity_code),
+    FOREIGN KEY (co_applicant_ethnicity) REFERENCES Ethnicity(ethnicity_code),
+    FOREIGN KEY (applicant_sex) REFERENCES Sex(sex_code),
+    FOREIGN KEY (co_applicant_sex) REFERENCES Sex(sex_code),
+    FOREIGN KEY (purchaser_type) REFERENCES PurchaserType(purchaser_type),
+    FOREIGN KEY (hoepa_status) REFERENCES HOEPAStatus(hoepa_status),
+    FOREIGN KEY (lien_status) REFERENCES LienStatus(lien_status),
+    FOREIGN KEY (edit_status) REFERENCES EditStatus(edit_status)
+);
+
+CREATE TABLE ApplicantRace (
+    ID INTEGER,
+    race_number SMALLINT,
+    race_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, race_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (race_code) REFERENCES Race(race_code)
+);
+
+CREATE TABLE CoApplicantRace (
+    ID INTEGER,
+    race_number SMALLINT,
+    race_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, race_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (race_code) REFERENCES Race(race_code)
+);
+
+CREATE TABLE DenialReasons (
+    ID INTEGER,
+    reason_number SMALLINT,
+    denial_reason_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, reason_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (denial_reason_code) REFERENCES DenialReason(denial_reason_code)
+);
+
+        Corrected SQL query:
+    
+
+--- LLM Correction Response ---
+  SELECT d.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons d WHERE d.denial_reason_name != 'None' GROUP BY d.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+
+==================== CORRECTION LOG END (Attempt 2) ======================
+
+
+
+==================== CORRECTION LOG START (Attempt 1) ====================
+Timestamp: 04:55:30 PM 05/05/25
+Question: What is the most common loan denial reason? 
+
+--- Original Query ---
+SELECT dr.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons dr JOIN LoanApplication la ON dr.denial_reason_code = la.ID WHERE dr.denial_reason_name != 'None' GROUP BY dr.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+
+--- Query Plan/Breakdown ---
+γ(denial_reason_name, COUNT(*))(σ denial_reason_name ≠ 'None' (DenialReasons ⨝ LoanApplication))
+
+TOP(1, 1)(γ(denial_reason_name, COUNT(*)))
+
+This expression first groups the LoanApplication table with the DenialReasons table based on the denial_reason_name, then counts the occurrences of each denial reason name where it is not 'None'. Finally, it takes the top 1 result, which is the most common denial reason.
+
+Note: This expression assumes that the 'None' value is used to indicate no denial reason. If there are multiple most common reasons, this expression will only return one of them. To get all the most common reasons, additional processing might be needed.
+
+--- Failed Query (Attempt {correction_attempts}) ---
+SELECT dr.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons dr JOIN LoanApplication la ON dr.denial_reason_code = la.ID WHERE dr.denial_reason_name != 'None' GROUP BY dr.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+
+--- Error Message ---
+Error executing query. Exit status: 1
+Command error output:
+Database error: column dr.denial_reason_name does not exist
+LINE 1: SELECT dr.denial_reason_name, COUNT(*) AS COUNT FROM DenialR...
+
+Hints:
+HINT:  Perhaps you meant to reference the column "dr.denial_reason_code".
+
+--- Correction Prompt ---
+
+        Fix the SQL query based on the error, original plan, and schema. Pay special attention to the hint in the error message if there is one.
+
+        Instructions:
+        1. Fix the SQL query based on the error message and hints.
+        2. Compare Failed SQL to the Original Plan and Schema.
+        3. Ensure all necessary tables are properly joined, especially for junction tables.
+        4. Use proper table aliases and qualify all column references.
+        5. Maintain the original query's intent as shown in the plan.
+        6. Output only the corrected SQL query, no explanations.
+
+        Original question: What is the most common loan denial reason? 
+
+        Original Plan:
+        γ(denial_reason_name, COUNT(*))(σ denial_reason_name ≠ 'None' (DenialReasons ⨝ LoanApplication))
+
+TOP(1, 1)(γ(denial_reason_name, COUNT(*)))
+
+This expression first groups the LoanApplication table with the DenialReasons table based on the denial_reason_name, then counts the occurrences of each denial reason name where it is not 'None'. Finally, it takes the top 1 result, which is the most common denial reason.
+
+Note: This expression assumes that the 'None' value is used to indicate no denial reason. If there are multiple most common reasons, this expression will only return one of them. To get all the most common reasons, additional processing might be needed.
+
+        Failed SQL query:
+        ```sql
+        SELECT dr.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons dr JOIN LoanApplication la ON dr.denial_reason_code = la.ID WHERE dr.denial_reason_name != 'None' GROUP BY dr.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+        ```
+
+        Error message:
+        Error executing query. Exit status: 1
+Command error output:
+Database error: column dr.denial_reason_name does not exist
+LINE 1: SELECT dr.denial_reason_name, COUNT(*) AS COUNT FROM DenialR...
+
+Hints:
+HINT:  Perhaps you meant to reference the column "dr.denial_reason_code".
+
+        
+            DenialReasons Query Pattern:
+            1. DenialReasons (drs) is a junction table
+            2. Must join with DenialReason (dr) on denial_reason_code
+            3. Correct query structure:
+               SELECT dr.denial_reason_name, COUNT(*) 
+               FROM DenialReasons drs 
+               JOIN DenialReason dr ON drs.denial_reason_code = dr.denial_reason_code
+               GROUP BY dr.denial_reason_name
+               ORDER BY COUNT(*) DESC
+        
+
+        Full Database Schema:
+        CREATE TABLE Agency (
+    agency_code SMALLINT PRIMARY KEY,
+    agency_name VARCHAR(100) NOT NULL,
+    agency_abbr VARCHAR(20) NOT NULL
+);
+
+CREATE TABLE LoanType (
+    loan_type SMALLINT PRIMARY KEY,
+    loan_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE PropertyType (
+    property_type SMALLINT PRIMARY KEY,
+    property_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE LoanPurpose (
+    loan_purpose SMALLINT PRIMARY KEY,
+    loan_purpose_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE OwnerOccupancy (
+    owner_occupancy SMALLINT PRIMARY KEY,
+    owner_occupancy_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Preapproval (
+    preapproval SMALLINT PRIMARY KEY,
+    preapproval_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE ActionTaken (
+    action_taken SMALLINT PRIMARY KEY,
+    action_taken_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE MSA (
+    msamd VARCHAR(5) PRIMARY KEY,
+    msamd_name VARCHAR(100)
+);
+
+CREATE TABLE State (
+    state_code CHAR(2) PRIMARY KEY,
+    state_name VARCHAR(100) NOT NULL,
+    state_abbr CHAR(2) NOT NULL
+);
+
+CREATE TABLE County (
+    county_code CHAR(3),
+    state_code CHAR(2),
+    county_name VARCHAR(100) NOT NULL,
+    PRIMARY KEY (county_code, state_code),
+    FOREIGN KEY (state_code) REFERENCES State(state_code)
+);
+
+CREATE TABLE Ethnicity (
+    ethnicity_code SMALLINT PRIMARY KEY,
+    ethnicity_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Race (
+    race_code SMALLINT PRIMARY KEY,
+    race_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Sex (
+    sex_code SMALLINT PRIMARY KEY,
+    sex_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE PurchaserType (
+    purchaser_type SMALLINT PRIMARY KEY,
+    purchaser_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE DenialReason (
+    denial_reason_code SMALLINT PRIMARY KEY,
+    denial_reason_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE HOEPAStatus (
+    hoepa_status SMALLINT PRIMARY KEY,
+    hoepa_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE LienStatus (
+    lien_status SMALLINT PRIMARY KEY,
+    lien_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE EditStatus (
+    edit_status SMALLINT PRIMARY KEY,
+    edit_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Location (
+    location_id SERIAL PRIMARY KEY,
+    msamd VARCHAR(5),
+    state_code CHAR(2),
+    county_code CHAR(3),
+    census_tract_number VARCHAR(8),
+    population INTEGER,
+    minority_population NUMERIC,
+    hud_median_family_income INTEGER,
+    tract_to_msamd_income NUMERIC,
+    number_of_owner_occupied_units INTEGER,
+    number_of_1_to_4_family_units INTEGER,
+    FOREIGN KEY (msamd) REFERENCES MSA(msamd),
+    FOREIGN KEY (state_code) REFERENCES State(state_code),
+    FOREIGN KEY (county_code, state_code) REFERENCES County(county_code, state_code)
+);
+
+CREATE TABLE RespondentAgency (
+    as_of_year INTEGER,
+    respondent_id VARCHAR(10),
+    agency_code SMALLINT,
+    PRIMARY KEY (as_of_year, respondent_id),
+    FOREIGN KEY (agency_code) REFERENCES Agency(agency_code)
+);
+
+CREATE TABLE LoanApplication (
+    ID INTEGER PRIMARY KEY,
+    as_of_year INTEGER NOT NULL,
+    respondent_id VARCHAR(10) NOT NULL,
+    loan_type SMALLINT NOT NULL,
+    property_type SMALLINT NOT NULL,
+    loan_purpose SMALLINT NOT NULL,
+    owner_occupancy SMALLINT NOT NULL,
+    loan_amount_000s NUMERIC,
+    preapproval SMALLINT NOT NULL,
+    action_taken SMALLINT NOT NULL,
+    location_id INTEGER NOT NULL,
+    applicant_ethnicity SMALLINT NOT NULL,
+    co_applicant_ethnicity SMALLINT,
+    applicant_sex SMALLINT NOT NULL,
+    co_applicant_sex SMALLINT,
+    applicant_income_000s NUMERIC,
+    purchaser_type SMALLINT,
+    rate_spread VARCHAR(10),
+    hoepa_status SMALLINT,
+    lien_status SMALLINT,
+    edit_status SMALLINT,
+    sequence_number VARCHAR(20),
+    application_date_indicator SMALLINT,
+    FOREIGN KEY (as_of_year, respondent_id) REFERENCES RespondentAgency(as_of_year, respondent_id),
+    FOREIGN KEY (loan_type) REFERENCES LoanType(loan_type),
+    FOREIGN KEY (property_type) REFERENCES PropertyType(property_type),
+    FOREIGN KEY (loan_purpose) REFERENCES LoanPurpose(loan_purpose),
+    FOREIGN KEY (owner_occupancy) REFERENCES OwnerOccupancy(owner_occupancy),
+    FOREIGN KEY (preapproval) REFERENCES Preapproval(preapproval),
+    FOREIGN KEY (action_taken) REFERENCES ActionTaken(action_taken),
+    FOREIGN KEY (location_id) REFERENCES Location(location_id),
+    FOREIGN KEY (applicant_ethnicity) REFERENCES Ethnicity(ethnicity_code),
+    FOREIGN KEY (co_applicant_ethnicity) REFERENCES Ethnicity(ethnicity_code),
+    FOREIGN KEY (applicant_sex) REFERENCES Sex(sex_code),
+    FOREIGN KEY (co_applicant_sex) REFERENCES Sex(sex_code),
+    FOREIGN KEY (purchaser_type) REFERENCES PurchaserType(purchaser_type),
+    FOREIGN KEY (hoepa_status) REFERENCES HOEPAStatus(hoepa_status),
+    FOREIGN KEY (lien_status) REFERENCES LienStatus(lien_status),
+    FOREIGN KEY (edit_status) REFERENCES EditStatus(edit_status)
+);
+
+CREATE TABLE ApplicantRace (
+    ID INTEGER,
+    race_number SMALLINT,
+    race_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, race_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (race_code) REFERENCES Race(race_code)
+);
+
+CREATE TABLE CoApplicantRace (
+    ID INTEGER,
+    race_number SMALLINT,
+    race_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, race_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (race_code) REFERENCES Race(race_code)
+);
+
+CREATE TABLE DenialReasons (
+    ID INTEGER,
+    reason_number SMALLINT,
+    denial_reason_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, reason_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (denial_reason_code) REFERENCES DenialReason(denial_reason_code)
+);
+
+        Corrected SQL query:
+    
+
+--- LLM Correction Response ---
+ SELECT dr.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons dr JOIN LoanApplication la ON dr.denial_reason_code = la.ID WHERE dr.denial_reason_name != 'None' GROUP BY dr.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+
+==================== CORRECTION LOG END (Attempt 1) ======================
+
+
+
+==================== CORRECTION LOG START (Attempt 2) ====================
+Timestamp: 04:55:30 PM 05/05/25
+Question: What is the most common loan denial reason? 
+
+--- Original Query ---
+SELECT dr.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons dr JOIN LoanApplication la ON dr.denial_reason_code = la.ID WHERE dr.denial_reason_name != 'None' GROUP BY dr.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+
+--- Query Plan/Breakdown ---
+γ(denial_reason_name, COUNT(*))(σ denial_reason_name ≠ 'None' (DenialReasons ⨝ LoanApplication))
+
+TOP(1, 1)(γ(denial_reason_name, COUNT(*)))
+
+This expression first groups the LoanApplication table with the DenialReasons table based on the denial_reason_name, then counts the occurrences of each denial reason name where it is not 'None'. Finally, it takes the top 1 result, which is the most common denial reason.
+
+Note: This expression assumes that the 'None' value is used to indicate no denial reason. If there are multiple most common reasons, this expression will only return one of them. To get all the most common reasons, additional processing might be needed.
+
+--- Failed Query (Attempt {correction_attempts}) ---
+SELECT dr.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons dr JOIN LoanApplication la ON dr.denial_reason_code = la.ID WHERE dr.denial_reason_name != 'None' GROUP BY dr.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+
+--- Error Message ---
+Error executing query. Exit status: 1
+Command error output:
+Database error: column dr.denial_reason_name does not exist
+LINE 1: SELECT dr.denial_reason_name, COUNT(*) AS COUNT FROM DenialR...
+
+Hints:
+HINT:  Perhaps you meant to reference the column "dr.denial_reason_code".
+
+--- Correction Prompt ---
+
+        Fix the SQL query based on the error, original plan, and schema. Pay special attention to the hint in the error message if there is one.
+
+        Instructions:
+        1. Fix the SQL query based on the error message and hints.
+        2. Compare Failed SQL to the Original Plan and Schema.
+        3. Ensure all necessary tables are properly joined, especially for junction tables.
+        4. Use proper table aliases and qualify all column references.
+        5. Maintain the original query's intent as shown in the plan.
+        6. Output only the corrected SQL query, no explanations.
+
+        Original question: What is the most common loan denial reason? 
+
+        Original Plan:
+        γ(denial_reason_name, COUNT(*))(σ denial_reason_name ≠ 'None' (DenialReasons ⨝ LoanApplication))
+
+TOP(1, 1)(γ(denial_reason_name, COUNT(*)))
+
+This expression first groups the LoanApplication table with the DenialReasons table based on the denial_reason_name, then counts the occurrences of each denial reason name where it is not 'None'. Finally, it takes the top 1 result, which is the most common denial reason.
+
+Note: This expression assumes that the 'None' value is used to indicate no denial reason. If there are multiple most common reasons, this expression will only return one of them. To get all the most common reasons, additional processing might be needed.
+
+        Failed SQL query:
+        ```sql
+        SELECT dr.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons dr JOIN LoanApplication la ON dr.denial_reason_code = la.ID WHERE dr.denial_reason_name != 'None' GROUP BY dr.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+        ```
+
+        Error message:
+        Error executing query. Exit status: 1
+Command error output:
+Database error: column dr.denial_reason_name does not exist
+LINE 1: SELECT dr.denial_reason_name, COUNT(*) AS COUNT FROM DenialR...
+
+Hints:
+HINT:  Perhaps you meant to reference the column "dr.denial_reason_code".
+
+        
+            DenialReasons Query Pattern:
+            1. DenialReasons (drs) is a junction table
+            2. Must join with DenialReason (dr) on denial_reason_code
+            3. Correct query structure:
+               SELECT dr.denial_reason_name, COUNT(*) 
+               FROM DenialReasons drs 
+               JOIN DenialReason dr ON drs.denial_reason_code = dr.denial_reason_code
+               GROUP BY dr.denial_reason_name
+               ORDER BY COUNT(*) DESC
+        
+
+        Full Database Schema:
+        CREATE TABLE Agency (
+    agency_code SMALLINT PRIMARY KEY,
+    agency_name VARCHAR(100) NOT NULL,
+    agency_abbr VARCHAR(20) NOT NULL
+);
+
+CREATE TABLE LoanType (
+    loan_type SMALLINT PRIMARY KEY,
+    loan_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE PropertyType (
+    property_type SMALLINT PRIMARY KEY,
+    property_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE LoanPurpose (
+    loan_purpose SMALLINT PRIMARY KEY,
+    loan_purpose_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE OwnerOccupancy (
+    owner_occupancy SMALLINT PRIMARY KEY,
+    owner_occupancy_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Preapproval (
+    preapproval SMALLINT PRIMARY KEY,
+    preapproval_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE ActionTaken (
+    action_taken SMALLINT PRIMARY KEY,
+    action_taken_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE MSA (
+    msamd VARCHAR(5) PRIMARY KEY,
+    msamd_name VARCHAR(100)
+);
+
+CREATE TABLE State (
+    state_code CHAR(2) PRIMARY KEY,
+    state_name VARCHAR(100) NOT NULL,
+    state_abbr CHAR(2) NOT NULL
+);
+
+CREATE TABLE County (
+    county_code CHAR(3),
+    state_code CHAR(2),
+    county_name VARCHAR(100) NOT NULL,
+    PRIMARY KEY (county_code, state_code),
+    FOREIGN KEY (state_code) REFERENCES State(state_code)
+);
+
+CREATE TABLE Ethnicity (
+    ethnicity_code SMALLINT PRIMARY KEY,
+    ethnicity_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Race (
+    race_code SMALLINT PRIMARY KEY,
+    race_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Sex (
+    sex_code SMALLINT PRIMARY KEY,
+    sex_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE PurchaserType (
+    purchaser_type SMALLINT PRIMARY KEY,
+    purchaser_type_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE DenialReason (
+    denial_reason_code SMALLINT PRIMARY KEY,
+    denial_reason_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE HOEPAStatus (
+    hoepa_status SMALLINT PRIMARY KEY,
+    hoepa_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE LienStatus (
+    lien_status SMALLINT PRIMARY KEY,
+    lien_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE EditStatus (
+    edit_status SMALLINT PRIMARY KEY,
+    edit_status_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Location (
+    location_id SERIAL PRIMARY KEY,
+    msamd VARCHAR(5),
+    state_code CHAR(2),
+    county_code CHAR(3),
+    census_tract_number VARCHAR(8),
+    population INTEGER,
+    minority_population NUMERIC,
+    hud_median_family_income INTEGER,
+    tract_to_msamd_income NUMERIC,
+    number_of_owner_occupied_units INTEGER,
+    number_of_1_to_4_family_units INTEGER,
+    FOREIGN KEY (msamd) REFERENCES MSA(msamd),
+    FOREIGN KEY (state_code) REFERENCES State(state_code),
+    FOREIGN KEY (county_code, state_code) REFERENCES County(county_code, state_code)
+);
+
+CREATE TABLE RespondentAgency (
+    as_of_year INTEGER,
+    respondent_id VARCHAR(10),
+    agency_code SMALLINT,
+    PRIMARY KEY (as_of_year, respondent_id),
+    FOREIGN KEY (agency_code) REFERENCES Agency(agency_code)
+);
+
+CREATE TABLE LoanApplication (
+    ID INTEGER PRIMARY KEY,
+    as_of_year INTEGER NOT NULL,
+    respondent_id VARCHAR(10) NOT NULL,
+    loan_type SMALLINT NOT NULL,
+    property_type SMALLINT NOT NULL,
+    loan_purpose SMALLINT NOT NULL,
+    owner_occupancy SMALLINT NOT NULL,
+    loan_amount_000s NUMERIC,
+    preapproval SMALLINT NOT NULL,
+    action_taken SMALLINT NOT NULL,
+    location_id INTEGER NOT NULL,
+    applicant_ethnicity SMALLINT NOT NULL,
+    co_applicant_ethnicity SMALLINT,
+    applicant_sex SMALLINT NOT NULL,
+    co_applicant_sex SMALLINT,
+    applicant_income_000s NUMERIC,
+    purchaser_type SMALLINT,
+    rate_spread VARCHAR(10),
+    hoepa_status SMALLINT,
+    lien_status SMALLINT,
+    edit_status SMALLINT,
+    sequence_number VARCHAR(20),
+    application_date_indicator SMALLINT,
+    FOREIGN KEY (as_of_year, respondent_id) REFERENCES RespondentAgency(as_of_year, respondent_id),
+    FOREIGN KEY (loan_type) REFERENCES LoanType(loan_type),
+    FOREIGN KEY (property_type) REFERENCES PropertyType(property_type),
+    FOREIGN KEY (loan_purpose) REFERENCES LoanPurpose(loan_purpose),
+    FOREIGN KEY (owner_occupancy) REFERENCES OwnerOccupancy(owner_occupancy),
+    FOREIGN KEY (preapproval) REFERENCES Preapproval(preapproval),
+    FOREIGN KEY (action_taken) REFERENCES ActionTaken(action_taken),
+    FOREIGN KEY (location_id) REFERENCES Location(location_id),
+    FOREIGN KEY (applicant_ethnicity) REFERENCES Ethnicity(ethnicity_code),
+    FOREIGN KEY (co_applicant_ethnicity) REFERENCES Ethnicity(ethnicity_code),
+    FOREIGN KEY (applicant_sex) REFERENCES Sex(sex_code),
+    FOREIGN KEY (co_applicant_sex) REFERENCES Sex(sex_code),
+    FOREIGN KEY (purchaser_type) REFERENCES PurchaserType(purchaser_type),
+    FOREIGN KEY (hoepa_status) REFERENCES HOEPAStatus(hoepa_status),
+    FOREIGN KEY (lien_status) REFERENCES LienStatus(lien_status),
+    FOREIGN KEY (edit_status) REFERENCES EditStatus(edit_status)
+);
+
+CREATE TABLE ApplicantRace (
+    ID INTEGER,
+    race_number SMALLINT,
+    race_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, race_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (race_code) REFERENCES Race(race_code)
+);
+
+CREATE TABLE CoApplicantRace (
+    ID INTEGER,
+    race_number SMALLINT,
+    race_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, race_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (race_code) REFERENCES Race(race_code)
+);
+
+CREATE TABLE DenialReasons (
+    ID INTEGER,
+    reason_number SMALLINT,
+    denial_reason_code SMALLINT NOT NULL,
+    PRIMARY KEY (ID, reason_number),
+    FOREIGN KEY (ID) REFERENCES LoanApplication(ID),
+    FOREIGN KEY (denial_reason_code) REFERENCES DenialReason(denial_reason_code)
+);
+
+        Corrected SQL query:
+    
+
+--- LLM Correction Response ---
+ SELECT dr.denial_reason_name, COUNT(*) AS COUNT FROM DenialReasons dr JOIN LoanApplication la ON dr.denial_reason_code = la.ID WHERE dr.denial_reason_name != 'None' GROUP BY dr.denial_reason_name ORDER BY COUNT DESC LIMIT 1;
+
+==================== CORRECTION LOG END (Attempt 2) ======================
+

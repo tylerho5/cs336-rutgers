@@ -47,55 +47,26 @@ def extract_query_from_text(text):
 def extract_relational_algebra(text):
     """
     Extract relational algebra expression from LLM output.
-    
-    This function looks for relational algebra expressions in the text.
-    It expects expressions using standard relational algebra notation.
-    
-    Args:
-        text (str): The LLM response text
-        
-    Returns:
-        str: The extracted relational algebra expression
-        
-    Raises:
-        ValueError: If no relational algebra expression could be extracted
+    Returns empty string if no valid expression found.
     """
-    # Common relational algebra operators
-    operators = r'[πσ⋈∪∩\-γτρ]'
-    
-    # Pattern to match relational algebra expressions
-    # This looks for expressions containing relational algebra operators
-    # with proper nesting of parentheses and operators
-    pattern = rf"""
-        # Match the start of a relational algebra expression
-        ^\s*{operators}.*?\(
-        # Match any number of nested expressions or simple terms
-        (?:
-            [^()]*  # Non-parentheses characters
-            |
-            \( [^()]* \)  # Simple parenthesized expressions
-        )*
-        \)  # Closing parenthesis
-    """
-    
-    # Compile with verbose flag and ignore case
-    regex = re.compile(pattern, re.VERBOSE | re.IGNORECASE)
-    
-    # First try to find after "Relational Algebra Expression:" marker
+    # Look for expressions after "Relational Algebra Expression:" marker
     marker_pattern = r"Relational Algebra Expression:\s*([\s\S]*?)(?:\n\n|\Z)"
     marker_match = re.search(marker_pattern, text)
     
-    if marker_match:
-        # If found after marker, try to extract the expression
-        potential_expr = marker_match.group(1).strip()
-        match = regex.search(potential_expr)
-        if match:
-            return match.group(0).strip()
+    if not marker_match:
+        return ""
+        
+    potential_expr = marker_match.group(1).strip()
     
-    # If no match found after marker, try the whole text
-    match = regex.search(text)
-    if match:
-        return match.group(0).strip()
+    # Split by newlines and take only lines that contain relational algebra operators
+    ra_lines = []
+    for line in potential_expr.split('\n'):
+        line = line.strip()
+        # Skip empty lines or lines starting with words (likely explanations)
+        if not line or line[0].isalpha():
+            continue
+        if any(op in line for op in ['π', 'σ', '⋈', '∪', '∩', '-', 'γ', 'τ', 'ρ']):
+            ra_lines.append(line)
     
-    # If we got here, no valid relational algebra expression was found
-    raise ValueError("Could not extract valid relational algebra expression from LLM response.")
+    # Return only the first valid expression found
+    return ra_lines[0] if ra_lines else ""

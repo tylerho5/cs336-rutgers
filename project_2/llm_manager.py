@@ -1,8 +1,17 @@
 import contextlib
 import os
 from pathlib import Path
+import gc
 
 from llama_cpp import Llama
+
+# Model paths
+BREAKDOWN_MODEL = "Phi-3.5-mini-instruct-Q4_K_M.gguf"
+SQL_MODEL = "sqlcoder-7b-q5_k_m.gguf"
+
+# Global variables to track loaded models
+current_model = None
+current_llm = None
 
 def load_schema():
     '''
@@ -15,6 +24,45 @@ def load_schema():
         context = f.read()
 
     return context
+
+def ensure_model_loaded(model_name):
+    '''
+    Ensure the specified model is loaded, unloading the current model if necessary.
+    '''
+    global current_model, current_llm
+    
+    # If the requested model is already loaded, return it
+    if current_model == model_name and current_llm is not None:
+        return current_llm
+    
+    # Unload current model if it exists
+    if current_llm is not None:
+        del current_llm
+        current_llm = None
+        current_model = None
+        gc.collect()  # Force garbage collection
+    
+    # Load the new model
+    script_dir = Path(__file__).parent
+    model_file_path = script_dir / 'model' / model_name
+
+    # suppress stderr during Llama initialization
+    with open(os.devnull, 'w') as f, contextlib.redirect_stderr(f):
+        try:
+            llm = Llama(
+                model_path=str(model_file_path),
+                n_gpu_layers=-1,
+                seed=1337,
+                n_ctx=4096,
+                verbose=False
+            )
+            current_llm = llm
+            current_model = model_name
+            return llm
+        except Exception as e:
+            print(f"Error loading LLM: {e}")
+            print("Consider checking model path...")
+            quit()
 
 def build_breakdown_prompt(context, question):
     """
@@ -53,6 +101,25 @@ def build_sql_from_breakdown_prompt(breakdown, context, question):
     '''
     build prompt for LLM to generate SQL from a relational algebra expression
     '''
+    specific_guidance = ""
+    
+    # Add special guidance for DenialReasons queries
+    if "denial" in question.lower() or "denialreasons" in breakdown.lower():
+        specific_guidance = """
+            IMPORTANT - For DenialReasons queries:
+            1. DenialReasons (drs) is a junction table - it does NOT have denial_reason_name
+            2. DenialReason (dr) is the lookup table - it HAS denial_reason_name
+            3. You MUST use these exact aliases and join:
+               ```sql
+               SELECT dr.denial_reason_name, COUNT(*) 
+               FROM DenialReasons drs 
+               JOIN DenialReason dr ON drs.denial_reason_code = dr.denial_reason_code
+               GROUP BY dr.denial_reason_name
+               ORDER BY COUNT(*) DESC
+               ```
+            4. NEVER try to get denial_reason_name from DenialReasons table
+        """
+
     prompt = f"""
         Instructions:
         1. View the relational‑algebra expression as a roadmap to the tables, joins, filters, and columns you need. It is a guide, not a rulebook.
@@ -60,6 +127,8 @@ def build_sql_from_breakdown_prompt(breakdown, context, question):
         3. Use fully qualified column names (alias.column) everywhere and pick clear, short aliases.
         4. Match table and column names exactly (case‑sensitive).
         5. Output **only** the SQL, wrapped in ```sql markdown tags.
+
+        {specific_guidance}
 
         Original Question: {question}
 
@@ -73,7 +142,7 @@ def build_sql_from_breakdown_prompt(breakdown, context, question):
     """
     return prompt
 
-def build_correction_prompt(question, query, error_msg, full_schema, breakdown): # Changed parameter name from relevant_schema to full_schema
+def build_correction_prompt(question, query, error_msg, full_schema, breakdown):
     '''
     Build a concise prompt for LLM to correct a SQL query error, using the original breakdown.
     '''
@@ -144,23 +213,28 @@ def build_correction_prompt(question, query, error_msg, full_schema, breakdown):
             Check the original Query Plan/Breakdown and the schema.
         """
 
-    # Add special guidance for DenialReasons queries
+        
+    # Add to error correction prompt if it's a DenialReasons query
     if "denial" in question.lower() or "denialreasons" in query.lower():
         specific_guidance += """
-            Special Note for DenialReasons Queries:
-            1. DenialReasons is a junction table that connects LoanApplication to DenialReason.
-            2. To get denial reason names, you MUST:
-               - Join LoanApplication with DenialReasons using ID
-               - Join DenialReasons with DenialReason using denial_reason_code
-            3. Example join pattern:
-               LoanApplication ⋈ DenialReasons ⋈ DenialReason
-            4. When counting denial reasons, make sure to:
-               - Group by denial_reason_code and denial_reason_name
-               - Count from DenialReasons (not DenialReason)
+            IMPORTANT - For DenialReasons queries:
+            1. DenialReasons (drs) is a junction table - it does NOT have denial_reason_name
+            2. DenialReason (dr) is the lookup table - it HAS denial_reason_name
+            3. You MUST use these exact aliases and join:
+               ```sql
+               SELECT dr.denial_reason_name, COUNT(*) 
+               FROM DenialReasons drs 
+               JOIN DenialReason dr ON drs.denial_reason_code = dr.denial_reason_code
+               GROUP BY dr.denial_reason_name
+               ORDER BY COUNT(*) DESC
+               ```
+            4. NEVER try to get denial_reason_name from DenialReasons table
         """
 
     prompt = f"""
         Fix the SQL query based on the error, original plan, and schema. Pay special attention to the hint in the error message if there is one.
+
+        {specific_guidance}
 
         Instructions:
         1. Fix the SQL query based on the error message and hints.
@@ -220,29 +294,14 @@ def query_llm(llm, prompt):
     
     return output['choices'][0]['message']['content']
 
-def initalize_llm(model_name):
+def get_breakdown_llm():
     '''
-    Initialize the local LLM model
+    Get the LLM instance for generating breakdowns
     '''
+    return ensure_model_loaded(BREAKDOWN_MODEL)
 
-    # construct the absolute path to the model file relative to this script
-    script_dir = Path(__file__).parent
-    model_file_path = script_dir / 'model' / model_name
-
-    # suppress stderr during Llama initialization
-    with open(os.devnull, 'w') as f, contextlib.redirect_stderr(f):
-        try:
-            llm = Llama(
-                model_path=str(model_file_path), # may not need to cast to str
-                n_gpu_layers=-1,
-                seed=1337,
-                n_ctx=4096,
-                verbose=False  # keep this to disable other logs
-            )
-
-        except Exception as e:
-            print(f"Error loading LLM: {e}")
-            print("Consider checking model path...")
-            quit()
-
-    return llm
+def get_sql_llm():
+    '''
+    Get the LLM instance for generating SQL
+    '''
+    return ensure_model_loaded(SQL_MODEL)
