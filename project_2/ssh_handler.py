@@ -14,17 +14,17 @@ def get_ssh_credentials():
     user = os.getenv('NETID', '')
     pwd = os.getenv('PASSWORD', '')
 
-    # Return credentials from .env if both exist
+    # Return credentials from .env if both exist and are not empty
     if user and pwd:
         print("\nCredentials found in environment variables.")
         return user, pwd
     
     print("\nPlease enter your iLab credentials")
-    # Fall back to interactive input if not found in .env
-    if user is None:
+    # Fall back to interactive input if not found in .env or empty
+    if not user:
         user = input("Enter NetID: ")
     
-    if pwd is None:
+    if not pwd:
         pwd = getpass.getpass(f"Enter password for {user}@ilab.cs.rutgers.edu: ")
 
     return user, pwd

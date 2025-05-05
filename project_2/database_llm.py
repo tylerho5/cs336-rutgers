@@ -21,11 +21,6 @@ import query_extraction
 import ssh_handler
 from error_extraction import extract_error_from_result
 
-# path to llm model
-# model_name = "Phi-3.5-mini-instruct-Q4_K_M.gguf"
-# model_name = "Phi-3.5-mini-instruct-Q8_0.gguf"
-model_name = "sqlcoder-7b-q5_k_m.gguf"
-
 # ilab configuration
 hostname = "ilab.cs.rutgers.edu"
 

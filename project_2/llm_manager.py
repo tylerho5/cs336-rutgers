@@ -20,7 +20,7 @@ def load_schema():
     
     context = ""
 
-    with open("project_2/schema_context.sql", "r") as f:
+    with open("./schema_context.sql", "r") as f:
         context = f.read()
 
     return context

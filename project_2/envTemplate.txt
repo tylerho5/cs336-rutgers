@@ -1,7 +1,0 @@
-Server login info
-NETID=
-PASSWORD=
-
-
-DB_NAME=
-DB_USER=
