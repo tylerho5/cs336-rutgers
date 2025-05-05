@@ -21,15 +21,13 @@ def build_breakdown_prompt(context, question):
     build a prompt for LLM to generate a query plan/breakdown
     """
     prompt = f"""
-        User Question: {question}
-
-        Schema:
-        {context}
+        Question: {question}
+        Schema: {context}
 
         Instructions:
-        Create a step-by-step English plan for a PostgreSQL query based on the User Question and Schema.
-        Focus on: Tables, JOINs (with keys), SELECT columns (table.col), WHERE filters, GROUP BY/aggregations, ORDER BY.
-        Output only the plan, no SQL, no explanations. Be as concise as possible.
+        Generate a concise PostgreSQL query plan in English based on the Question and Schema.
+        Include: Tables, JOINs (keys), SELECT (table.col), WHERE, GROUP BY/aggregations, ORDER BY.
+        Output ONLY the plan steps in English. Do NOT include any SQL code or explanations.
 
         Plan:
     """
@@ -42,11 +40,9 @@ def build_sql_from_breakdown_prompt(breakdown, context, question):
     prompt = f"""
         Original Question: {question}
 
-        Query Plan:
-        {breakdown}
+        Query Plan: {breakdown}
 
-        Schema:
-        {context}
+        Schema: {context}
 
         Instructions:
         1. Translate the Query Plan into a single, valid PostgreSQL query.
@@ -61,97 +57,58 @@ def build_sql_from_breakdown_prompt(breakdown, context, question):
     """
     return prompt
 
-def build_correction_prompt(question, query, error_msg, relevant_schema, breakdown): # Added breakdown parameter
+def build_correction_prompt(question, query, raw_db_output, relevant_schema, breakdown): # Added breakdown parameter, changed error_msg to raw_db_output
     '''
     Build a concise prompt for LLM to correct a SQL query error, using the original breakdown.
     '''
 
     specific_guidance = ""
-    if "column" in error_msg.lower() and "does not exist" in error_msg.lower():
+    # Check for keywords in the raw database output
+    if "column" in raw_db_output.lower() and "does not exist" in raw_db_output.lower():
         specific_guidance = """
-            Error Type Hint: Column Not Found.
-            Possible Causes:
-            1. Typo in column name (check schema).
-            2. Column exists in a different table than specified (check JOINs and aliases).
-            3. Trying to access a descriptive field (e.g., `race_name`) from a junction table (e.g., `ApplicantRace`) instead of the lookup table (e.g., `Race`). You MUST join to the lookup table.
-            4. Missing table alias or incorrect alias used.
-            Check the original Query Plan/Breakdown for intended logic.
+            Hint: Column Not Found. Check: Typo? Wrong table? Missing JOIN? Incorrect alias? Check HINT in error.
         """
     # Missing JOIN condition
-    elif "cross join" in error_msg.lower() or "missing join condition" in error_msg.lower():
+    elif "cross join" in raw_db_output.lower() or "missing join condition" in raw_db_output.lower():
         specific_guidance = """
-            Error Type Hint: Missing JOIN Condition.
-            Possible Causes:
-            1. A JOIN clause is missing its ON condition.
-            2. Incorrect syntax in the ON condition.
-            Check the original Query Plan/Breakdown for intended JOINs.
+            Hint: Missing JOIN Condition. Check: JOIN clause missing ON? Incorrect ON syntax?
         """
     # Ambiguous column reference
-    elif "ambiguous" in error_msg.lower() and "column" in error_msg.lower():
+    elif "ambiguous" in raw_db_output.lower() and "column" in raw_db_output.lower():
         specific_guidance = """
-            Error Type Hint: Ambiguous Column Reference.
-            Possible Causes:
-            1. A column name exists in multiple tables in the FROM/JOIN clauses, and it wasn't qualified with a table alias (e.g., `alias.column`).
-            2. An alias was forgotten or used inconsistently.
-            Always use table aliases and qualify all columns when multiple tables are joined.
+            Hint: Ambiguous Column. Check: Column in multiple tables? Qualify with alias (alias.column)?
         """
     # Missing GROUP BY columns
-    elif "must appear in the group by clause" in error_msg.lower() or "not in group by" in error_msg.lower():
+    elif "must appear in the group by clause" in raw_db_output.lower() or "not in group by" in raw_db_output.lower():
         specific_guidance = """
-            Error Type Hint: GROUP BY Error.
-            Possible Causes:
-            1. The SELECT list contains non-aggregated columns that are not listed in the GROUP BY clause.
-            2. The GROUP BY clause is missing entirely when using aggregate functions (COUNT, SUM, AVG, etc.).
-            All non-aggregated columns in SELECT must be in GROUP BY.
+            Hint: GROUP BY Error. Check: Non-aggregated SELECT columns missing from GROUP BY?
         """
     # Syntax error
-    elif "syntax error" in error_msg.lower():
+    elif "syntax error" in raw_db_output.lower():
         specific_guidance = """
-            Error Type Hint: SQL Syntax Error.
-            Possible Causes:
-            1. Typo in keywords (SELECT, FROM, WHERE, JOIN, ON, GROUP, BY, ORDER).
-            2. Missing or extra commas, parentheses, or quotes.
-            3. Incorrect use of aliases.
-            Review the query structure carefully, comparing against standard SQL syntax and the original Query Plan/Breakdown.
+            Hint: SQL Syntax Error. Check: Typos? Missing/extra commas/parentheses/quotes? Check HINT in error.
         """
     # Table does not exist
-    elif "relation" in error_msg.lower() and "does not exist" in error_msg.lower():
+    elif "relation" in raw_db_output.lower() and "does not exist" in raw_db_output.lower():
         specific_guidance = """
-            Error Type Hint: Table Not Found ('relation does not exist').
-            Possible Causes:
-            1. Typo in table name (check schema, case-sensitive).
-            2. Using an alias as if it were a table name in a JOIN condition.
-            3. Table truly does not exist in the provided schema.
-            Check the original Query Plan/Breakdown and the schema.
+            Hint: Table Not Found ('relation does not exist'). Check: Typo? Alias used as table name? Check schema.
         """
 
     prompt = f"""
-        Fix the SQL query based on the error, original plan, and schema. Pay special attention to the hint in the error message if there is one.
+        Fix the SQL query based on the full error output, original plan, and schema. Pay special attention to the error in the database error output if there is one.
 
         Original question: {question}
 
-        Original Plan:
-        {breakdown}
+        Original Plan: {breakdown}
 
         Failed SQL query:
         ```sql
         {query}
         ```
 
-        Error message:
-        {error_msg}
+        Full Database Error Output: {raw_db_output}
 
         {specific_guidance}
-
-        Relevant schema:
-        {relevant_schema}
-
-        Instructions:
-        1. Analyze the Error and Hint.
-        2. Compare Failed SQL to the Original Plan and Schema.
-        3. Fix ONLY the error, keeping the logic consistent with the Plan.
-        4. Ensure correct table/column names (case-sensitive) and aliases.
-        5. Output ONLY the corrected SQL query in ```sql markdown tags.
 
         Corrected SQL Query:
     """

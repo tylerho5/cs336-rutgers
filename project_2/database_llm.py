@@ -151,7 +151,7 @@ def main():
             current_query = query
             success = False
             
-            while correction_attempts < MAX_CORRECTION_ATTEMPTS:
+            while correction_attempts <= MAX_CORRECTION_ATTEMPTS:
                 try:
                     if use_stdin:
                         result = ssh_handler.execute_query_stdin(hostname, user, pwd, current_query, wd_path, user, pwd)
@@ -172,14 +172,16 @@ def main():
                             
                         print(f"Query encountered an error. Attempt {correction_attempts} of {MAX_CORRECTION_ATTEMPTS} to fix...")
                         
-                        # Extract error message
+                        # Extract error message (still useful for logging/debugging if needed, but not passed to prompt)
                         error_msg = error_extraction.extract_error_from_result(result)
-                        
-                        # Get relevant schema subset based on tables in the query
-                        relevant_schema = error_extraction.extract_relevant_schema(current_query, context)
 
-                        # Build correction prompt 
-                        correction_prompt = llm_manager.build_correction_prompt(question, current_query, error_msg, relevant_schema, breakdown)
+                        # Get relevant schema subset based on tables in the query
+                        #relevant_schema = error_extraction.extract_relevant_schema(current_query, context)
+
+                        relevant_schema = ""
+                        
+                        # Build correction prompt using the raw result output
+                        correction_prompt = llm_manager.build_correction_prompt(question, current_query, result, relevant_schema, breakdown)
                         
                         # Get corrected query from LLM
                         print("Generating corrected query...")
