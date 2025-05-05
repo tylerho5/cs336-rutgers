@@ -28,3 +28,4 @@ def extract_error_from_result(result):
     
     return "Unknown error occurred while executing the query."
 
+# Removed extract_relevant_schema function 

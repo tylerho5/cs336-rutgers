@@ -19,10 +19,12 @@ import sys
 import llm_manager
 import query_extraction
 import ssh_handler
-import error_extraction
+from error_extraction import extract_error_from_result
 
 # path to llm model
-model_name = "Phi-3.5-mini-instruct-Q4_K_M.gguf"
+# model_name = "Phi-3.5-mini-instruct-Q4_K_M.gguf"
+# model_name = "Phi-3.5-mini-instruct-Q8_0.gguf"
+model_name = "sqlcoder-7b-q5_k_m.gguf"
 
 # ilab configuration
 hostname = "ilab.cs.rutgers.edu"
@@ -112,7 +114,7 @@ def main():
                 f.write("--------------------------------------------------------\n\n")
 
             # --- Step 2: Generate SQL from Breakdown ---
-            print("Generating SQL query from Relational Algebra Expression...")
+            print("Generating SQL query from plan...")
             sql_prompt = llm_manager.build_sql_from_breakdown_prompt(breakdown, context, question)
             response = llm_manager.query_llm(llm, sql_prompt)
 
@@ -173,13 +175,13 @@ def main():
                         print(f"Query encountered an error. Attempt {correction_attempts} of {MAX_CORRECTION_ATTEMPTS} to fix...")
                         
                         # Extract error message
-                        error_msg = error_extraction.extract_error_from_result(result)
+                        error_msg = extract_error_from_result(result)
                         
-                        # Get relevant schema subset based on tables in the query
-                        relevant_schema = error_extraction.extract_relevant_schema(current_query, context)
+                        # Get the full schema for error correction
+                        full_schema = llm_manager.load_schema()
 
                         # Build correction prompt 
-                        correction_prompt = llm_manager.build_correction_prompt(question, current_query, error_msg, relevant_schema, breakdown)
+                        correction_prompt = llm_manager.build_correction_prompt(question, current_query, error_msg, full_schema, breakdown)
                         
                         # Get corrected query from LLM
                         print("Generating corrected query...")
@@ -218,9 +220,7 @@ def main():
                             break
                     else:
                         # Success! Display results and break the loop
-                        print("#" * 50)
                         print("\nQuery Results:")
-                        print("#" * 50)
                         print(result)
                         success = True
                         break
