@@ -16,6 +16,7 @@ def get_ssh_credentials():
 
     # Return credentials from .env if both exist
     if user and pwd:
+        print("\nCredentials found in environment variables.")
         return user, pwd
     
     print("\nPlease enter your iLab credentials")
