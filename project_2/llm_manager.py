@@ -11,57 +11,69 @@ def load_schema():
     
     context = ""
 
-    with open("project_2/schema_context.txt", "r") as f:
+    with open("project_2/schema_context.sql", "r") as f:
         context = f.read()
 
     return context
 
 def build_breakdown_prompt(context, question):
     """
-    build a prompt for LLM to generate a query plan/breakdown
+    build a prompt for LLM to generate relational algebra expressions
     """
     prompt = f"""
+        Instructions:
+        Create a step-by-step relational algebra expression for the query based on the User Question and Schema.
+        Use standard relational algebra notation:
+        - σ for selection (WHERE conditions)
+        - π for projection (SELECT columns)
+        - ⋈ for natural join
+        - ⋈θ for theta join (with conditions)
+        - ∪ for union
+        - ∩ for intersection
+        - - for set difference
+        - γ for grouping/aggregation
+        - τ for sorting
+        - ρ for renaming
+
+        Example format:
+        π column1, column2 (σ condition (Table1 ⋈ Table2))
+
+        Output only the relational algebra expression, no SQL, no explanations. Be as concise as possible.
+
         User Question: {question}
 
         Schema:
         {context}
 
-        Instructions:
-        Create a step-by-step English plan for a PostgreSQL query based on the User Question and Schema.
-        Focus on: Tables, JOINs (with keys), SELECT columns (table.col), WHERE filters, GROUP BY/aggregations, ORDER BY.
-        Output only the plan, no SQL, no explanations. Be as concise as possible.
-
-        Plan:
+        Relational Algebra:
     """
     return prompt
 
 def build_sql_from_breakdown_prompt(breakdown, context, question):
     '''
-    build prompt for LLM to generate SQL from a breakdown/plan
+    build prompt for LLM to generate SQL from a relational algebra expression
     '''
     prompt = f"""
+        Instructions:
+        1. View the relational‑algebra expression as a roadmap to the tables, joins, filters, and columns you need. It is a guide, not a rulebook.
+        2. Write one valid PostgreSQL query that answers the question. Add aggregates when the question requires them, even if they were not shown in the algebra.
+        3. Use fully qualified column names (alias.column) everywhere and pick clear, short aliases.
+        4. Match table and column names exactly (case‑sensitive).
+        5. Output **only** the SQL, wrapped in ```sql markdown tags.
+
         Original Question: {question}
 
-        Query Plan:
+        Relational Algebra Expression:
         {breakdown}
 
         Schema:
         {context}
 
-        Instructions:
-        1. Translate the Query Plan into a single, valid PostgreSQL query.
-        2. Use fully qualified column names (alias.column) for ALL columns.
-        3. Use meaningful table aliases.
-        4. Follow the Plan's JOINs, filters, grouping, and ordering precisely.
-        5. Match schema names EXACTLY (case-sensitive).
-        6. If using aggregates, include non-aggregated SELECT columns in GROUP BY.
-        7. Output ONLY the SQL query in ```sql markdown tags.
-
         SQL Query:
     """
     return prompt
 
-def build_correction_prompt(question, query, error_msg, relevant_schema, breakdown): # Added breakdown parameter
+def build_correction_prompt(question, query, error_msg, full_schema, breakdown): # Changed parameter name from relevant_schema to full_schema
     '''
     Build a concise prompt for LLM to correct a SQL query error, using the original breakdown.
     '''
@@ -73,7 +85,7 @@ def build_correction_prompt(question, query, error_msg, relevant_schema, breakdo
             Possible Causes:
             1. Typo in column name (check schema).
             2. Column exists in a different table than specified (check JOINs and aliases).
-            3. Trying to access a descriptive field (e.g., `race_name`) from a junction table (e.g., `ApplicantRace`) instead of the lookup table (e.g., `Race`). You MUST join to the lookup table.
+            3. Trying to access a descriptive field (e.g., `denial_reason_name`) from a junction table (e.g., `DenialReasons`) instead of the lookup table (e.g., `DenialReason`). You MUST join to the lookup table.
             4. Missing table alias or incorrect alias used.
             Check the original Query Plan/Breakdown for intended logic.
         """
@@ -84,6 +96,9 @@ def build_correction_prompt(question, query, error_msg, relevant_schema, breakdo
             Possible Causes:
             1. A JOIN clause is missing its ON condition.
             2. Incorrect syntax in the ON condition.
+            3. For junction tables (like DenialReasons), you need to join:
+               - First table to junction table (e.g., LoanApplication.ID = DenialReasons.ID)
+               - Junction table to lookup table (e.g., DenialReasons.denial_reason_code = DenialReason.denial_reason_code)
             Check the original Query Plan/Breakdown for intended JOINs.
         """
     # Ambiguous column reference
@@ -93,6 +108,7 @@ def build_correction_prompt(question, query, error_msg, relevant_schema, breakdo
             Possible Causes:
             1. A column name exists in multiple tables in the FROM/JOIN clauses, and it wasn't qualified with a table alias (e.g., `alias.column`).
             2. An alias was forgotten or used inconsistently.
+            3. When using junction tables, make sure to properly alias all tables and qualify column references.
             Always use table aliases and qualify all columns when multiple tables are joined.
         """
     # Missing GROUP BY columns
@@ -102,6 +118,7 @@ def build_correction_prompt(question, query, error_msg, relevant_schema, breakdo
             Possible Causes:
             1. The SELECT list contains non-aggregated columns that are not listed in the GROUP BY clause.
             2. The GROUP BY clause is missing entirely when using aggregate functions (COUNT, SUM, AVG, etc.).
+            3. When working with junction tables, make sure to include the correct columns from the lookup table in GROUP BY.
             All non-aggregated columns in SELECT must be in GROUP BY.
         """
     # Syntax error
@@ -112,6 +129,7 @@ def build_correction_prompt(question, query, error_msg, relevant_schema, breakdo
             1. Typo in keywords (SELECT, FROM, WHERE, JOIN, ON, GROUP, BY, ORDER).
             2. Missing or extra commas, parentheses, or quotes.
             3. Incorrect use of aliases.
+            4. For junction tables, ensure proper JOIN syntax with ON conditions.
             Review the query structure carefully, comparing against standard SQL syntax and the original Query Plan/Breakdown.
         """
     # Table does not exist
@@ -122,11 +140,35 @@ def build_correction_prompt(question, query, error_msg, relevant_schema, breakdo
             1. Typo in table name (check schema, case-sensitive).
             2. Using an alias as if it were a table name in a JOIN condition.
             3. Table truly does not exist in the provided schema.
+            4. For junction tables, make sure to include both the junction table and its lookup table.
             Check the original Query Plan/Breakdown and the schema.
+        """
+
+    # Add special guidance for DenialReasons queries
+    if "denial" in question.lower() or "denialreasons" in query.lower():
+        specific_guidance += """
+            Special Note for DenialReasons Queries:
+            1. DenialReasons is a junction table that connects LoanApplication to DenialReason.
+            2. To get denial reason names, you MUST:
+               - Join LoanApplication with DenialReasons using ID
+               - Join DenialReasons with DenialReason using denial_reason_code
+            3. Example join pattern:
+               LoanApplication ⋈ DenialReasons ⋈ DenialReason
+            4. When counting denial reasons, make sure to:
+               - Group by denial_reason_code and denial_reason_name
+               - Count from DenialReasons (not DenialReason)
         """
 
     prompt = f"""
         Fix the SQL query based on the error, original plan, and schema. Pay special attention to the hint in the error message if there is one.
+
+        Instructions:
+        1. Fix the SQL query based on the error message and hints.
+        2. Compare Failed SQL to the Original Plan and Schema.
+        3. Ensure all necessary tables are properly joined, especially for junction tables.
+        4. Use proper table aliases and qualify all column references.
+        5. Maintain the original query's intent as shown in the plan.
+        6. Output only the corrected SQL query, no explanations.
 
         Original question: {question}
 
@@ -143,19 +185,12 @@ def build_correction_prompt(question, query, error_msg, relevant_schema, breakdo
 
         {specific_guidance}
 
-        Relevant schema:
-        {relevant_schema}
+        Full Database Schema:
+        {full_schema}
 
-        Instructions:
-        1. Analyze the Error and Hint.
-        2. Compare Failed SQL to the Original Plan and Schema.
-        3. Fix ONLY the error, keeping the logic consistent with the Plan.
-        4. Ensure correct table/column names (case-sensitive) and aliases.
-        5. Output ONLY the corrected SQL query in ```sql markdown tags.
 
-        Corrected SQL Query:
+        Corrected SQL query:
     """
-
     return prompt
 
 def query_llm(llm, prompt):

@@ -97,7 +97,7 @@ def main():
             print("Generating query plan...")
             breakdown_prompt = llm_manager.build_breakdown_prompt(context, question)
             breakdown = llm_manager.query_llm(llm, breakdown_prompt)
-            print(f"\nQuery Plan:\n{breakdown}\n")
+            print(f"\nRelational Algebra Expression:\n{breakdown}\n")
 
             # Log breakdown generation
             with open(os.path.join(log_dir, 'llm_output.txt'), 'a') as f:
@@ -112,7 +112,7 @@ def main():
                 f.write("--------------------------------------------------------\n\n")
 
             # --- Step 2: Generate SQL from Breakdown ---
-            print("Generating SQL query from plan...")
+            print("Generating SQL query from Relational Algebra Expression...")
             sql_prompt = llm_manager.build_sql_from_breakdown_prompt(breakdown, context, question)
             response = llm_manager.query_llm(llm, sql_prompt)
 
@@ -218,7 +218,9 @@ def main():
                             break
                     else:
                         # Success! Display results and break the loop
+                        print("#" * 50)
                         print("\nQuery Results:")
+                        print("#" * 50)
                         print(result)
                         success = True
                         break

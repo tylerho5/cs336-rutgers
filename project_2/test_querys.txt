@@ -1,0 +1,61 @@
+Test Queries for Natural Language Database Interface
+
+1. Simple query with basic statistics:
+   "What is the average loan amount in the database?"
+
+2. Query with junction table relationship:
+   "What is the most common loan denial reason?"
+
+3. Query with comparison and count:
+   "How many mortgages have a loan value greater than the applicant income?"
+
+4. Query with join and filter:
+   "What is the average income of owner occupied applications?"
+
+5. Multiple joins with grouping:
+   "Show me the top 3 loan types by average income"
+
+6. Demographic analysis:
+   "What is the racial breakdown of applicants by percentage?"
+
+7. Complex filtering with multiple conditions:
+   "How many loans were approved for applicants with income below 50K in owner-occupied properties?"
+
+8. Geographic analysis:
+   "Which state has the highest average loan amount?"
+
+9. Time-based analysis:
+   "What was the trend in loan amounts by year?"
+
+10. Junction table with multiple joins:
+    "Show me the distribution of denial reasons for female applicants"
+
+11. Comparative analysis between groups:
+    "Compare the average loan amounts between male and female applicants"
+
+12. Advanced filtering with subqueries:
+    "Which lenders have an average loan amount higher than the overall average?"
+
+13. Complex group by with having clause:
+    "Find states where more than 1000 loans were denied due to debt-to-income ratio"
+
+14. Multiple junction tables:
+    "Show the racial demographics of loan applicants who were denied due to credit history"
+
+15. Complex aggregation:
+    "What is the ratio of approved to denied loans by state?"
+
+16. Property type analysis:
+    "What's the distribution of loan amounts by property type?"
+
+17. Loan purpose analysis:
+    "Show me the average income of applicants by loan purpose"
+
+18. Location-based demographic query:
+    "What counties have the highest percentage of minority applicants?"
+
+19. Multi-level aggregation:
+    "Calculate the average, minimum, and maximum loan amounts by loan type and property type"
+
+20. Co-applicant analysis:
+    "What percentage of loans have co-applicants, broken down by loan type?" 
