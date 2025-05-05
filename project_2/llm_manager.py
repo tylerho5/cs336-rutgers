@@ -29,7 +29,7 @@ def build_breakdown_prompt(context, question):
         Instructions:
         Create a step-by-step English plan for a PostgreSQL query based on the User Question and Schema.
         Focus on: Tables, JOINs (with keys), SELECT columns (table.col), WHERE filters, GROUP BY/aggregations, ORDER BY.
-        Output only the plan, no SQL.
+        Output only the plan, no SQL, no explanations. Be as concise as possible.
 
         Plan:
     """
@@ -169,7 +169,7 @@ def query_llm(llm, prompt):
             messages=[
                 {
                     "role": "system",
-                    "content": "You are an expert PostgreSQL assistant. Your task is to generate or fix SQL queries based on database schemas. You provide only the SQL query without explanation unless specifically asked. Always ensure column and table names match the schema exactly."
+                    "content": "You are an expert PostgreSQL assistant."
                 },
                 {
                     "role": "user",

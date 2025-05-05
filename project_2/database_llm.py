@@ -91,7 +91,7 @@ def main():
                 print("Exiting...")
                 break
 
-            print("Processing your question...")
+            print("\nProcessing your question...")
 
             # --- Step 1: Generate Query Breakdown ---
             print("Generating query plan...")

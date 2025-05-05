@@ -4,3 +4,6 @@ psycopg2-binary
 python-dotenv
 paramiko
 llama-cpp-python==0.3.8
+
+# Linux fix for llama-cpp-python
+# #CMAKE_ARGS="-DLLAMA_OPENBLAS=on" FORCE_CMAKE=1 pip install llama-cpp-python==0.1.48
