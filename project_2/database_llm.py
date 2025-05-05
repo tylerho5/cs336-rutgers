@@ -42,7 +42,7 @@ def main():
         user, pwd = ssh_handler.get_ssh_credentials()
         
         # test the connection to make sure credentials work
-        print(f"\nTesting connection to {hostname}...")
+        print(f"Testing connection to {hostname}...")
         if use_stdin:
             test_result = ssh_handler.execute_query_stdin(hostname, user, pwd, "SELECT 1", wd_path, user, pwd)
 
@@ -93,20 +93,36 @@ def main():
 
             print("Processing your question...")
 
-            # build prompt for llm
-            prompt = llm_manager.build_prompt(context, question)
+            # --- Step 1: Generate Query Breakdown ---
+            print("Generating query plan...")
+            breakdown_prompt = llm_manager.build_breakdown_prompt(context, question)
+            breakdown = llm_manager.query_llm(llm, breakdown_prompt)
+            print(f"\nQuery Plan:\n{breakdown}\n")
 
-            # pass prompt to llm
-            response = llm_manager.query_llm(llm, prompt)
-
-            # log response
+            # Log breakdown generation
             with open(os.path.join(log_dir, 'llm_output.txt'), 'a') as f:
                 f.write("\n\n==================== LOG ENTRY START ====================\n")
                 f.write(f"Timestamp: {timestamp}\n")
                 f.write(f"Question: {question}\n\n")
-                f.write("--- LLM Response Start ---\n")
+                f.write("--- Breakdown Prompt ---\n")
+                f.write(f"{breakdown_prompt}\n\n")
+                f.write("--- LLM Breakdown Response ---\n")
+                f.write(f"{breakdown}\n")
+                # Separator before SQL generation log
+                f.write("--------------------------------------------------------\n\n")
+
+            # --- Step 2: Generate SQL from Breakdown ---
+            print("Generating SQL query from plan...")
+            sql_prompt = llm_manager.build_sql_from_breakdown_prompt(breakdown, context, question)
+            response = llm_manager.query_llm(llm, sql_prompt)
+
+            # Log SQL generation response (append to the same log entry)
+            with open(os.path.join(log_dir, 'llm_output.txt'), 'a') as f:
+                f.write("--- SQL Generation Prompt ---\n")
+                f.write(f"{sql_prompt}\n\n")
+                f.write("--- LLM SQL Response Start ---\n")
                 f.write(f"{response}\n")
-                f.write("--- LLM Response End ---\n\n")
+                f.write("--- LLM SQL Response End ---\n\n")
                 f.write("==================== LOG ENTRY END ======================\n\n")
 
             # extract SQL query from llm response
@@ -161,9 +177,9 @@ def main():
                         
                         # Get relevant schema subset based on tables in the query
                         relevant_schema = error_extraction.extract_relevant_schema(current_query, context)
-                        
-                        # Build correction prompt
-                        correction_prompt = llm_manager.build_correction_prompt(question, current_query, error_msg, relevant_schema)
+
+                        # Build correction prompt 
+                        correction_prompt = llm_manager.build_correction_prompt(question, current_query, error_msg, relevant_schema, breakdown)
                         
                         # Get corrected query from LLM
                         print("Generating corrected query...")
@@ -175,8 +191,10 @@ def main():
                             f.write(f"Timestamp: {timestamp}\n")
                             f.write(f"Question: {question}\n\n")
                             f.write("--- Original Query ---\n")
-                            f.write(f"{query}\n\n")
-                            f.write("--- Current Query ---\n")
+                            f.write(f"{query}\n\n") # Log the *initial* query generated
+                            f.write("--- Query Plan/Breakdown ---\n") # Log the breakdown used
+                            f.write(f"{breakdown}\n\n")
+                            f.write("--- Failed Query (Attempt {correction_attempts}) ---\n")
                             f.write(f"{current_query}\n\n")
                             f.write("--- Error Message ---\n")
                             f.write(f"{error_msg}\n\n")

@@ -4,9 +4,6 @@ from pathlib import Path
 
 from llama_cpp import Llama
 
-# toggle for prompting style for testing
-structured_prompting = True
-
 def load_schema():
     '''
     load database schema from cut-down project_1 sql file
@@ -19,200 +16,146 @@ def load_schema():
 
     return context
 
-def build_prompt(context, question):
-    '''
-    build prompt for LLM
-    has option to either use structured formatting or regular sentences
-    '''
+def build_breakdown_prompt(context, question):
+    """
+    build a prompt for LLM to generate a query plan/breakdown
+    """
+    prompt = f"""
+        User Question: {question}
 
-    # Two different styles of prompting for testing purposes
-    # not sure if structured is better
-    if structured_prompting:
-        prompt = f"""
-            Query:
-            {question}
+        Schema:
+        {context}
 
-            Database Schema:
-            {context}
+        Instructions:
+        Create a step-by-step English plan for a PostgreSQL query based on the User Question and Schema.
+        Focus on: Tables, JOINs (with keys), SELECT columns (table.col), WHERE filters, GROUP BY/aggregations, ORDER BY.
+        Output only the plan, no SQL.
 
-            Instructions:
-            1. Analyze the question carefully to identify the entities and attributes needed.
-            2. IMPORTANT: Always use fully qualified column names (table.column) for ALL columns.
-            3. When joining tables:
-               - Identify whether you need junction tables for many-to-many relationships
-               - Always use the correct join keys as specified in the schema
-               - Use meaningful table aliases consistently throughout the query
-            4. Follow proper SQL patterns:
-               - Use explicit JOIN syntax with proper ON conditions
-               - Match column and table names EXACTLY as they appear in the schema
-               - GROUP BY all non-aggregated columns in SELECT statements
-               - Use appropriate aliases for calculated columns
-            5. Check the schema carefully before writing your query:
-               - Verify all tables and columns exist exactly as specified
-               - Identify primary and foreign key relationships
-               - Note any junction tables needed for many-to-many relationships
-            6. Construct a single PostgreSQL query that answers the question precisely.
-            7. Output only the SQL query enclosed in ```sql markdown tags.
-
-            Common Errors to Avoid:
-            1. NEVER use unqualified column names when joining multiple tables
-            2. NEVER try to directly join tables that require junction tables - check the schema
-            3. NEVER reference columns that don't exist in the schema (verify each column name carefully)
-            4. ALWAYS include all necessary JOINs when accessing related tables
-            5. ALWAYS check for and use junction tables for many-to-many relationships
-            6. ALWAYS use the exact table and column names as they appear in the schema
-            7. Be careful with aggregate functions (COUNT, SUM, etc.) - include GROUP BY for all non-aggregated columns
-            8. Avoid ambiguous column references - always qualify with table name or alias
-            """
-    
-    else: 
-        prompt = f"""
-            You are an expert PostgreSQL assistant. You will be given a database schema and a question.
-            Your task is to generate a single, valid PostgreSQL query that answers the question based *only* on the provided schema.
-            Carefully verify that all table names and column names used in your query exist exactly as defined in the schema below. Do not use any tables or columns not explicitly mentioned.
-
-            Query:
-            {question}
-
-            Database Schema:
-            {context}
-
-            Provide *only* the SQL query, enclosed in ```sql markdown tags. Do not include any explanations or introductory text.
-            SQL:
-            """
-
+        Plan:
+    """
     return prompt
 
-def build_correction_prompt(question, query, error_msg, relevant_schema):
+def build_sql_from_breakdown_prompt(breakdown, context, question):
     '''
-    build prompt for LLM to correct a SQL query that produced an error
-    
-    Args:
-        question (str): Original user question
-        query (str): Failed SQL query
-        error_msg (str): Error message from database
-        relevant_schema (str): Relevant portion of the schema
-        
-    Returns:
-        str: Prompt for LLM to correct the query
+    build prompt for LLM to generate SQL from a breakdown/plan
     '''
-    
-    # Add specific guidance based on error patterns
+    prompt = f"""
+        Original Question: {question}
+
+        Query Plan:
+        {breakdown}
+
+        Schema:
+        {context}
+
+        Instructions:
+        1. Translate the Query Plan into a single, valid PostgreSQL query.
+        2. Use fully qualified column names (alias.column) for ALL columns.
+        3. Use meaningful table aliases.
+        4. Follow the Plan's JOINs, filters, grouping, and ordering precisely.
+        5. Match schema names EXACTLY (case-sensitive).
+        6. If using aggregates, include non-aggregated SELECT columns in GROUP BY.
+        7. Output ONLY the SQL query in ```sql markdown tags.
+
+        SQL Query:
+    """
+    return prompt
+
+def build_correction_prompt(question, query, error_msg, relevant_schema, breakdown): # Added breakdown parameter
+    '''
+    Build a concise prompt for LLM to correct a SQL query error, using the original breakdown.
+    '''
+
     specific_guidance = ""
-    
-    # Column does not exist error
     if "column" in error_msg.lower() and "does not exist" in error_msg.lower():
         specific_guidance = """
-        This is a column name error. Check:
-        1. The column might be in a different table than you think
-        2. For many-to-many relationships, you must join to the lookup table to get descriptive fields
-        3. Junction tables (with names ending in 's') typically only contain foreign keys, not descriptive names
-        4. Lookup tables (without 's') contain the actual descriptive names
-        
-        Example fix for column name error:
-        INCORRECT: SELECT J.description FROM JunctionTable J
-        CORRECT:   SELECT L.description FROM JunctionTable J JOIN LookupTable L ON J.lookup_id = L.id
+            Error Type Hint: Column Not Found.
+            Possible Causes:
+            1. Typo in column name (check schema).
+            2. Column exists in a different table than specified (check JOINs and aliases).
+            3. Trying to access a descriptive field (e.g., `race_name`) from a junction table (e.g., `ApplicantRace`) instead of the lookup table (e.g., `Race`). You MUST join to the lookup table.
+            4. Missing table alias or incorrect alias used.
+            Check the original Query Plan/Breakdown for intended logic.
         """
     # Missing JOIN condition
     elif "cross join" in error_msg.lower() or "missing join condition" in error_msg.lower():
         specific_guidance = """
-        This is a JOIN condition error. Check:
-        1. Every JOIN must have an ON clause with proper conditions
-        2. Make sure foreign keys match between tables
-        3. Verify the join fields exist in both tables
-        
-        Example fix for missing JOIN condition:
-        INCORRECT: SELECT * FROM TableA JOIN TableB
-        CORRECT:   SELECT * FROM TableA A JOIN TableB B ON A.id = B.table_a_id
+            Error Type Hint: Missing JOIN Condition.
+            Possible Causes:
+            1. A JOIN clause is missing its ON condition.
+            2. Incorrect syntax in the ON condition.
+            Check the original Query Plan/Breakdown for intended JOINs.
         """
     # Ambiguous column reference
     elif "ambiguous" in error_msg.lower() and "column" in error_msg.lower():
         specific_guidance = """
-        This is an ambiguous column reference error. Check:
-        1. Always qualify column names with table aliases when multiple tables are involved
-        2. The same column name might exist in multiple joined tables
-        
-        Example fix for ambiguous column:
-        INCORRECT: SELECT id, code FROM JunctionTable JOIN LookupTable
-        CORRECT:   SELECT J.id, J.code FROM JunctionTable J JOIN LookupTable L ON J.code = L.code
+            Error Type Hint: Ambiguous Column Reference.
+            Possible Causes:
+            1. A column name exists in multiple tables in the FROM/JOIN clauses, and it wasn't qualified with a table alias (e.g., `alias.column`).
+            2. An alias was forgotten or used inconsistently.
+            Always use table aliases and qualify all columns when multiple tables are joined.
         """
     # Missing GROUP BY columns
     elif "must appear in the group by clause" in error_msg.lower() or "not in group by" in error_msg.lower():
         specific_guidance = """
-        This is a GROUP BY error. Check:
-        1. All non-aggregated columns in the SELECT clause must also appear in the GROUP BY clause
-        2. You can't mix aggregated and non-aggregated columns without using GROUP BY
-        
-        Example fix for GROUP BY:
-        INCORRECT: SELECT category_name, COUNT(*) FROM Categories JOIN Items GROUP BY category_id
-        CORRECT:   SELECT category_name, COUNT(*) FROM Categories JOIN Items GROUP BY category_name
+            Error Type Hint: GROUP BY Error.
+            Possible Causes:
+            1. The SELECT list contains non-aggregated columns that are not listed in the GROUP BY clause.
+            2. The GROUP BY clause is missing entirely when using aggregate functions (COUNT, SUM, AVG, etc.).
+            All non-aggregated columns in SELECT must be in GROUP BY.
         """
     # Syntax error
     elif "syntax error" in error_msg.lower():
         specific_guidance = """
-        This is a syntax error. Check:
-        1. Look for missing commas between columns
-        2. Check for missing parentheses or mismatched quotes
-        3. Verify SQL keywords are properly spaced
-        4. Make sure table aliases are consistent throughout the query
-        
-        Example of common syntax fixes:
-        INCORRECT: SELECT column1 column2 FROM table
-        CORRECT:   SELECT column1, column2 FROM table
-        
-        INCORRECT: SELECT COUNT(*) as count items FROM table
-        CORRECT:   SELECT COUNT(*) as count_items FROM table
+            Error Type Hint: SQL Syntax Error.
+            Possible Causes:
+            1. Typo in keywords (SELECT, FROM, WHERE, JOIN, ON, GROUP, BY, ORDER).
+            2. Missing or extra commas, parentheses, or quotes.
+            3. Incorrect use of aliases.
+            Review the query structure carefully, comparing against standard SQL syntax and the original Query Plan/Breakdown.
         """
     # Table does not exist
     elif "relation" in error_msg.lower() and "does not exist" in error_msg.lower():
         specific_guidance = """
-        This is a table name error. Check:
-        1. Verify the table name is spelled correctly
-        2. Check the case of the table name (PostgreSQL is case-sensitive)
-        3. Make sure you're not using an alias as if it were a table name
-        4. Confirm the table name exists in the schema
-        
-        Example fix for table name:
-        INCORRECT: SELECT * FROM items
-        CORRECT:   SELECT * FROM Items
+            Error Type Hint: Table Not Found ('relation does not exist').
+            Possible Causes:
+            1. Typo in table name (check schema, case-sensitive).
+            2. Using an alias as if it were a table name in a JOIN condition.
+            3. Table truly does not exist in the provided schema.
+            Check the original Query Plan/Breakdown and the schema.
         """
-    
+
     prompt = f"""
-        I need to fix a SQL query that failed.
-        
+        Fix the SQL query based on the error, original plan, and schema. Pay special attention to the hint in the error message if there is one.
+
         Original question: {question}
-        
+
+        Original Plan:
+        {breakdown}
+
         Failed SQL query:
         ```sql
         {query}
         ```
-        
+
         Error message:
         {error_msg}
-        
+
         {specific_guidance}
-        
+
         Relevant schema:
         {relevant_schema}
-        
+
         Instructions:
-        1. Analyze the error message carefully
-        2. Identify the specific issue in the query
-        3. Fix ONLY what's needed to address the error
-        4. Remember:
-           - Junction tables (often with names ending in 's') typically contain ONLY foreign keys, not descriptive fields
-           - Lookup tables contain the descriptive fields (names, descriptions)
-           - To get descriptive names from a many-to-many relationship, you MUST join both tables
-        5. Use appropriate table aliases (e.g., meaningful short abbreviations)
-        6. Ensure all column and table names match the schema exactly
-        7. Provide the corrected query ONLY
-        8. Enclose the fixed query in ```sql markdown tags
-        
-        REMEMBER: If you need a descriptive name, you MUST join to the lookup table.
-        
-        Please provide a corrected SQL query that resolves this error.
+        1. Analyze the Error and Hint.
+        2. Compare Failed SQL to the Original Plan and Schema.
+        3. Fix ONLY the error, keeping the logic consistent with the Plan.
+        4. Ensure correct table/column names (case-sensitive) and aliases.
+        5. Output ONLY the corrected SQL query in ```sql markdown tags.
+
+        Corrected SQL Query:
     """
-    
+
     return prompt
 
 def query_llm(llm, prompt):
