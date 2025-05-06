@@ -95,7 +95,7 @@ DB_USER=DB_USERNAME_USUALLY_JUST_NET_ID
 ``` 
 
 ### AI/LLM Usage
-We used ChatGPT to explain how to work with the packages we used: paramiko, psycopg2, llama-cpp-python, contextlib, subprocess, etc.
+We used ChatGPT and Gemini to explain how to work with the packages we used: paramiko, psycopg2, llama-cpp-python, contextlib, subprocess, etc.
 
 We also used ChatGPT to help refine our regex expressions for capturing the relational algebra and SQL statements from the LLM output.
 
@@ -106,3 +106,5 @@ Here are a couple chat transcripts that were not removed:
 https://chatgpt.com/share/68197f64-6290-8001-8ed8-0cc012ba753d
 
 https://chatgpt.com/share/68197f46-93a8-8001-9f3c-6e67bfa84f33
+
+https://aistudio.google.com/app/prompts/1m3SFrwMr9rhi_4HoWxN5Lv_iU5DdXgvd
