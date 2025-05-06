@@ -75,6 +75,8 @@ curl -L -o model/Phi-3.5-mini-instruct-Q4_K_M.gguf "https://huggingface.co/barto
 
 ### Running the Program
 
+Place `ilab_script.py` on iLab instance and copy its directory into `database_llm.py` in `wd_path`.
+
 ```bash
 KMP_DUPLICATE_LIB_OK=TRUE python3 database_llm.py
 ```
