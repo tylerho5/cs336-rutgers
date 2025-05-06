@@ -7,17 +7,18 @@ This project implements an advanced natural language interface to a PostgreSQL d
 |------|-------|---------------|
 | Rohan Sharma | rs2563 | Contributions |
 | Daneliz Urena | dlu8 | Contributions |
-| Tyler Ho | [NetID 3] | Contributions |
-| ROBIN DEL ROSARIO | [NetID 4] | Who is this? |
+| Tyler Ho | tjh195 | Contributions |
+| Robin Del Rosario | rhd41 | Contributions |
 
 ## What Was Challenging
+* Using a small LLM (Phi-3.5-mini) to generate complex SQL queries
 * Getting consistent, valid SQL queries from the LLM for a complex schema
 * Implementing robust error detection and correction feedback loop
 * Configuring SSH tunneling with secure credential management
 * Optimizing prompts for improved SQL accuracy
 
 ## What Was Interesting
-* Using a small LLM (Phi-3.5-mini) to generate complex SQL queries
+
 * Creating a self-correcting system that handles its own errors
 * How prompt engineering significantly impacts query quality
 * Building an end-to-end system connecting natural language to database results
@@ -66,8 +67,15 @@ curl -L -o model/Phi-3.5-mini-instruct-Q4_K_M.gguf "https://huggingface.co/barto
 ```
 
 ### Running the Program
+
 ```bash
 KMP_DUPLICATE_LIB_OK=TRUE python3 database_llm.py
+```
+
+OR
+
+```bash
+python project_2/runner_script.py
 ```
 
 ### Environment Configuration
