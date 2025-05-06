@@ -3,8 +3,8 @@ import platform
 import subprocess
 import sys
  
-# set script path relative to the root directory
-script_path = os.path.join("project_2", "database_llm.py")
+# set script path relative to the script's directory
+script_path = "database_llm.py" # Corrected path
 
 # check if script exists
 if not os.path.exists(script_path):
