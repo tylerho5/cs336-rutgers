@@ -2,13 +2,20 @@
 
 This project implements an advanced natural language interface to a PostgreSQL database using a local LLM (Phi-3.5-mini & sqlcoder-7b-2). Users can ask questions in plain English, and the system will generate SQL queries, execute them on the database, and return formatted results.
 
+## Video
+
+The link below is for a video with a demonstration of installing and running the project with a brief explanation of the architecture of the whole program.
+
+https://youtu.be/Ap7C1AZB4dM
+
+
 ## Team Members and Contributions
 | Name | NetID | Contributions |
 |------|-------|---------------|
-| Rohan Sharma | rs2563 | Contributions |
-| Daneliz Urena | dlu8 | Contributions |
-| Tyler Ho | tjh195 | Contributions |
-| Robin Del Rosario | rhd41 | Contributions |
+| Rohan Sharma | rs2563 | Two model pipeline implementation; error checking loop; logging llm interaction |
+| Daneliz Urena | dlu8 | Regex expression development to refine RA and SQL query extraction; error extraction |
+| Tyler Ho | tjh195 | Initial Phi model implementation; SSH tunneling; database connection; query extraction; logging llm interaction |
+| Robin Del Rosario | rhd41 | Prompt optimization; documentation |
 
 ## What Was Challenging
 * Using a small LLM (Phi-3.5-mini) to generate complex SQL queries
