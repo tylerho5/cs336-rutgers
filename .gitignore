@@ -13,7 +13,7 @@ CS336P2/
 *.egg-info/
 dist/
 build/
-test_results/
+logs/
 
 # macOS
 .DS_Store
