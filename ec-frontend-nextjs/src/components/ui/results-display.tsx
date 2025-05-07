@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from 'react';
+import { Code, TableIcon, MessageSquare, ArrowLeft } from 'lucide-react';
+import { Table } from './table';
 
 interface ResultsDisplayProps {
   originalQuery: string;
@@ -21,7 +23,7 @@ export function ResultsDisplay({
   error,
   onReset,
 }: ResultsDisplayProps) {
-  const [activeTab, setActiveTab] = useState<'query' | 'llm' | 'results'>('results');
+  const [activeTab, setActiveTab] = useState<'results' | 'query' | 'llm'>('results');
   
   // Parse the results string into a table structure if possible
   const parseResults = () => {
@@ -50,43 +52,6 @@ export function ResultsDisplay({
   };
   
   const { headers, rows } = parseResults();
-  
-  // Function to sort rows by a column
-  const [sortColumn, setSortColumn] = useState<number | null>(null);
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-  
-  const handleSort = (columnIndex: number) => {
-    if (sortColumn === columnIndex) {
-      // Toggle direction if same column
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      // New column, default to ascending
-      setSortColumn(columnIndex);
-      setSortDirection('asc');
-    }
-  };
-  
-  // Sort the rows if a sort column is selected
-  const sortedRows = [...rows];
-  if (sortColumn !== null && sortColumn < headers.length) {
-    sortedRows.sort((a, b) => {
-      const valA = a[sortColumn] || '';
-      const valB = b[sortColumn] || '';
-      
-      // Try numeric comparison first
-      const numA = Number(valA);
-      const numB = Number(valB);
-      
-      if (!isNaN(numA) && !isNaN(numB)) {
-        return sortDirection === 'asc' ? numA - numB : numB - numA;
-      }
-      
-      // Fall back to string comparison
-      return sortDirection === 'asc' 
-        ? valA.localeCompare(valB)
-        : valB.localeCompare(valA);
-    });
-  }
   
   // Render appropriate error UI based on error message
   const renderErrorMessage = () => {
@@ -160,130 +125,105 @@ export function ResultsDisplay({
       );
     }
   };
+
+  // Format SQL for better display
+  const formatSql = (sql: string) => {
+    return sql.trim();
+  };
   
   return (
-    <div className="w-full space-y-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-medium">Query Results</h2>
-        <button
-          onClick={onReset}
-          className="rounded-md bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-400"
-        >
-          New Query
-        </button>
+    <div className="w-full space-y-4 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="flex items-center justify-between border-b pb-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onReset}
+              className="flex items-center gap-1 text-emerald-600 hover:text-emerald-800 transition-colors focus:outline-none"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span>New Query</span>
+            </button>
+          </div>
+          <h3 className="mt-2 text-lg font-medium text-gray-900">
+            "{originalQuery}"
+          </h3>
+        </div>
       </div>
       
       {error ? (
         renderErrorMessage()
       ) : (
         <>
-          <div className="overflow-hidden rounded-md border border-gray-200">
-            <div className="flex border-b border-gray-200">
+          <div className="border-b">
+            <div className="flex space-x-1">
               <button
-                className={`px-4 py-2 text-sm font-medium ${
-                  activeTab === 'results' ? 'bg-gray-100 text-blue-600' : 'text-gray-600 hover:bg-gray-50'
-                }`}
+                className={`px-4 py-3 text-sm font-medium border-b-2 ${
+                  activeTab === 'results' 
+                    ? 'border-emerald-600 text-emerald-600' 
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                } flex items-center gap-2 transition-colors`}
                 onClick={() => setActiveTab('results')}
               >
+                <TableIcon className="h-4 w-4" />
                 Results
               </button>
               <button
-                className={`px-4 py-2 text-sm font-medium ${
-                  activeTab === 'query' ? 'bg-gray-100 text-blue-600' : 'text-gray-600 hover:bg-gray-50'
-                }`}
+                className={`px-4 py-3 text-sm font-medium border-b-2 ${
+                  activeTab === 'query' 
+                    ? 'border-emerald-600 text-emerald-600' 
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                } flex items-center gap-2 transition-colors`}
                 onClick={() => setActiveTab('query')}
               >
-                SQL Query
+                <Code className="h-4 w-4" />
+                SQL & Relational Algebra
               </button>
               <button
-                className={`px-4 py-2 text-sm font-medium ${
-                  activeTab === 'llm' ? 'bg-gray-100 text-blue-600' : 'text-gray-600 hover:bg-gray-50'
-                }`}
+                className={`px-4 py-3 text-sm font-medium border-b-2 ${
+                  activeTab === 'llm' 
+                    ? 'border-emerald-600 text-emerald-600' 
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                } flex items-center gap-2 transition-colors`}
                 onClick={() => setActiveTab('llm')}
               >
+                <MessageSquare className="h-4 w-4" />
                 LLM Output
               </button>
             </div>
-            
-            <div className="p-4">
-              {activeTab === 'results' && (
-                <div>
-                  <div className="mb-2">
-                    <p><strong>Original Question:</strong> {originalQuery}</p>
-                  </div>
-                  {headers.length > 0 ? (
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                          <tr>
-                            {headers.map((header, index) => (
-                              <th
-                                key={index}
-                                scope="col"
-                                className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 cursor-pointer"
-                                onClick={() => handleSort(index)}
-                              >
-                                {header}
-                                {sortColumn === index && (
-                                  <span className="ml-1">
-                                    {sortDirection === 'asc' ? '↑' : '↓'}
-                                  </span>
-                                )}
-                              </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200 bg-white">
-                          {sortedRows.map((row, rowIndex) => (
-                            <tr key={rowIndex} className={rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                              {row.map((cell, cellIndex) => (
-                                <td
-                                  key={cellIndex}
-                                  className="whitespace-nowrap px-6 py-4 text-sm text-gray-500"
-                                >
-                                  {cell}
-                                </td>
-                              ))}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  ) : (
-                    <pre className="mt-2 whitespace-pre-wrap rounded-md bg-gray-50 p-4 text-sm font-mono">
-                      {results || 'No results to display'}
-                    </pre>
-                  )}
-                </div>
-              )}
-              
-              {activeTab === 'query' && (
-                <div>
-                  <div className="mb-4">
-                    <h3 className="text-sm font-medium text-gray-700">Relational Algebra:</h3>
-                    <pre className="mt-2 whitespace-pre-wrap rounded-md bg-gray-50 p-4 text-sm font-mono">
-                      {relationalAlgebra || 'No relational algebra available'}
-                    </pre>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-700">SQL Query:</h3>
-                    <pre className="mt-2 whitespace-pre-wrap rounded-md bg-gray-50 p-4 text-sm font-mono">
-                      {sqlQuery || 'No SQL query available'}
-                    </pre>
-                  </div>
-                </div>
-              )}
-              
-              {activeTab === 'llm' && (
-                <div>
-                  <h3 className="text-sm font-medium text-gray-700">LLM Processing Output:</h3>
-                  <pre className="mt-2 whitespace-pre-wrap rounded-md bg-gray-50 p-4 text-sm font-mono">
-                    {llmOutput || 'No LLM output available'}
-                  </pre>
-                </div>
-              )}
-            </div>
           </div>
+          
+          {activeTab === 'results' && (
+            <div className="pt-2">
+              <Table headers={headers} rows={rows} />
+            </div>
+          )}
+          
+          {activeTab === 'query' && (
+            <div className="space-y-6 pt-4">
+              <div>
+                <h3 className="text-sm font-medium text-gray-900 mb-2">SQL Query</h3>
+                <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-md border border-gray-200">
+                  <pre className="whitespace-pre-wrap text-sm font-mono text-gray-800 dark:text-gray-200">{formatSql(sqlQuery)}</pre>
+                </div>
+              </div>
+              
+              <div>
+                <h3 className="text-sm font-medium text-gray-900 mb-2">Relational Algebra</h3>
+                <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-md border border-gray-200">
+                  <pre className="whitespace-pre-wrap text-sm font-mono text-gray-800 dark:text-gray-200">{relationalAlgebra}</pre>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {activeTab === 'llm' && (
+            <div className="pt-4">
+              <h3 className="text-sm font-medium text-gray-900 mb-2">LLM Processing Output</h3>
+              <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-md border border-gray-200 h-80 overflow-y-auto">
+                <pre className="whitespace-pre-wrap text-sm text-gray-800 dark:text-gray-200">{llmOutput}</pre>
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>
