@@ -1,0 +1,25 @@
+This project is worth up to 3% of your final grade in extra credit (Canvas points is displayed as 0 pts so it doesn't affect student's who choose not to do it). For this project you can choose your own groups by going to the people tab in canvas and joining one of the groups, however, you cannot prevent other students from joining your group, so make sure to choose the full 4 team members if you want to avoid working with people you don't know.
+
+If you are unsure of any part of this project, you should as an LLM to explain it to you. AI use is permitted for this project. The good ones right now are Claude 3.7, gemini 2.5 flash/pro, and open AI O3-mini, O4mini or O1. You should have free access to gemeni through your rutgers email address and the others through varios free trials. YOU MUST INCLUDE ALL TRANSCRIPTS OF ALL CHATS.
+
+The goal of this project is to have a working front end for your project. In order to make this work you will need to choose a frontend framework, you may choose any one you like.
+
+ 
+
+The points will be awarded as follows:
+
+1 pt: basic working frontend that provides the functionality that the backend did. For this you need a textbox to enter in the natural language query and be able to see the output. you should also be able to go back and make new question once you are done looking at the output.
+
+1pt organized interactive tables that you can sort and interact with. The output table should be well formatted and have interactive tables. You should also in general have an attractive interface that looks modern
+
+1pt Ability to see output. This should have separate boxes in the output screen to show the SQL query and another box to show the output of the LLM, along with the original query done by the user.
+
+TO SUBMIT:
+
+Show a short (<1 minute) video showing your program working. You are permitted to have a cut to save time waiting for the llm to work. It should show off all the features you implemented and everything from the code being run in the command line to the user interface
+
+Submit a README describing which features you implemented
+
+All code needed to run the project. This should include the SQL code to make the database, the python code to run the llm (including both scripts) and whatever frontend code you use.
+
+Please also submit the citiations and transcripts of any chats you use.
