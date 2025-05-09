@@ -43,7 +43,7 @@ This project enhances the original Natural Language Database Interface (Project 
 ### Prerequisites
 
 - Python 3.8+
-- Node.js 16+
+- Node.js 18.18.0+ (v20.0.0 or higher recommended, as required by Next.js)
 - NPM
 - Access to Rutgers iLab
 
@@ -108,6 +108,10 @@ npm run dev
 
 The application will be available at http://localhost:3000
 
+### 4. Stopping the Application
+
+To stop both the backend and frontend services that were started with `./run_ec_project.sh`, press `Ctrl+C` in the terminal where the script is running.
+
 ## How It Works
 
 1. **User Input**: The user enters a natural language question
@@ -170,4 +174,4 @@ Helpful log messages are printed to the terminal where you ran `./run_ec_project
 
 - The frontend is responsive and works on mobile devices
 - Error handling is implemented for both frontend and backend issues
-- The application maintains the core functionality of the original project while adding a modern, user-friendly interface 
+- The application maintains the core functionality of the original project while adding a modern, user-friendly interface
