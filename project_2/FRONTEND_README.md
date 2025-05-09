@@ -10,14 +10,16 @@ This project enhances the original Natural Language Database Interface (Project 
 
 ```
 .
-├── backend/                # FastAPI backend API
-├── ec-frontend-nextjs/     # Next.js frontend
-├── project_2/              # Original LLM database interface
+├── project_2/              # Original LLM database interface & Extra Credit UI Project
+│   ├── backend/            # FastAPI backend API (EC)
+│   ├── ec-frontend-nextjs/ # Next.js frontend (EC)
 │   ├── CS336P2/            # Python virtual environment
 │   ├── model/              # LLM models
-│   └── ...                 # Other project files
-├── setup_credentials.sh    # Script to set up database credentials
-└── run_ec_project.sh       # Script to run both backend and frontend
+│   ├── setup_credentials.sh # Script to set up database credentials (EC)
+│   ├── run_ec_project.sh   # Script to run both backend and frontend (EC)
+│   └── ...                 # Other project files for Project 2
+├── LICENSE
+└── environment.yml
 ```
 
 ## Features Implemented
@@ -52,11 +54,11 @@ This project enhances the original Natural Language Database Interface (Project 
 First, you need to set up your database credentials:
 
 ```bash
-# Run the credentials setup script
-./setup_credentials.sh
+# Run the credentials setup script (now located in project_2)
+./project_2/setup_credentials.sh
 ```
 
-This will create a `.env` file in the project_2 directory with your iLab and database credentials.
+This will create a `.env` file in the `project_2` directory and `project_2/backend` directory with your iLab and database credentials.
 
 ### 2. Quick Start
 
@@ -64,10 +66,10 @@ The easiest way to run the application is using the provided shell script:
 
 ```bash
 # Make the script executable (if needed)
-chmod +x run_ec_project.sh
+chmod +x ./project_2/run_ec_project.sh
 
-# Run the application
-./run_ec_project.sh
+# Run the application (now located in project_2)
+./project_2/run_ec_project.sh
 ```
 
 This will:
@@ -83,19 +85,28 @@ If you prefer to run the services manually:
 #### Backend Setup
 
 ```bash
+# Navigate to project_2 directory first
+cd project_2
+
 # Navigate to backend directory
 cd backend
 
-# Activate the virtual environment
-source ../project_2/CS336P2/bin/activate  
+# Activate the virtual environment (from project_2/backend, path is ../CS336P2)
+source ../CS336P2/bin/activate  
 
 # Start the FastAPI server
 KMP_DUPLICATE_LIB_OK=TRUE python3 main.py
+
+# Navigate back to the root if needed
+# cd ../..
 ```
 
 #### Frontend Setup
 
 ```bash
+# Navigate to project_2 directory first
+cd project_2
+
 # Navigate to frontend directory
 cd ec-frontend-nextjs
 
@@ -104,13 +115,16 @@ npm install
 
 # Start the development server
 npm run dev
+
+# Navigate back to the root if needed
+# cd ../..
 ```
 
 The application will be available at http://localhost:3000
 
 ### 4. Stopping the Application
 
-To stop both the backend and frontend services that were started with `./run_ec_project.sh`, press `Ctrl+C` in the terminal where the script is running.
+To stop both the backend and frontend services that were started with `./project_2/run_ec_project.sh`, press `Ctrl+C` in the terminal where the script is running.
 
 ## How It Works
 
@@ -150,28 +164,19 @@ If you see timeout errors:
 
 2. **"Failed to fetch"**: This typically means the backend server isn't running or cannot be reached. Try:
    - Ensure the backend server is still running
-   - Restart both backend and frontend services with `./run_ec_project.sh`
+   - Restart both backend and frontend services with `./project_2/run_ec_project.sh`
    - Check the terminal output for any error messages
 
 3. **Database Connection Issues**: If you see "Authentication failed" or "Failed to connect to iLab database":
-   - Run `./setup_credentials.sh` to update your credentials
+   - Run `./project_2/setup_credentials.sh` to update your credentials
    - Ensure you have access to the Rutgers iLab server
    - Check if your iLab password has expired
 
 ### Terminal Output
 
-Helpful log messages are printed to the terminal where you ran `./run_ec_project.sh`. If you're experiencing issues, check this output for clues. It shows:
+Helpful log messages are printed to the terminal where you ran `./project_2/run_ec_project.sh`. If you're experiencing issues, check this output for clues. It shows:
 
 - The step-by-step processing of each query
 - Timing information for each phase
 - Any connection or processing errors
 
-## Team Members and Contributions
-
-[Your team member details here]
-
-## Extra Notes
-
-- The frontend is responsive and works on mobile devices
-- Error handling is implemented for both frontend and backend issues
-- The application maintains the core functionality of the original project while adding a modern, user-friendly interface

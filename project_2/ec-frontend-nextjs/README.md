@@ -14,24 +14,28 @@ This project implements a natural language interface to a PostgreSQL database us
 
 ### 1. Set up and start the backend
 
+Make sure the backend is running. Navigate to the `project_2` directory (one level up from this `ec-frontend-nextjs` folder) and follow the instructions in `project_2/README.md` or use the main `run_ec_project.sh` script.
+
+Typically, from the `cs336-rutgers/project_2` directory:
+
 ```bash
-# Navigate to the backend directory
+# Activate the virtual environment (if not already active from run_ec_project.sh)
+# source CS336P2/bin/activate
+
+# Navigate to the backend directory (now project_2/backend)
 cd backend
 
-# Activate the virtual environment from project_2
-source ../project_2/CS336P2/bin/activate
-
 # Start the FastAPI server
-python main.py
+KMP_DUPLICATE_LIB_OK=TRUE python3 main.py
 ```
 
-The backend will be running at http://localhost:8000
+The backend should be running at http://localhost:8000
 
-### 2. Set up and start the frontend
+### 2. Set up and start the frontend (this project)
 
 ```bash
-# Navigate to the frontend directory
-cd ec-frontend-nextjs
+# Navigate to this frontend directory (project_2/ec-frontend-nextjs)
+# cd ec-frontend-nextjs # If you are not already here
 
 # Install dependencies
 npm install
@@ -41,6 +45,12 @@ npm run dev
 ```
 
 The frontend will be running at http://localhost:3000
+
+Alternatively, you can run both backend and frontend using the main script from the `cs336-rutgers` root directory:
+```bash
+# From the cs336-rutgers directory
+./project_2/run_ec_project.sh
+```
 
 ## How It Works
 

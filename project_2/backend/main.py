@@ -13,7 +13,7 @@ from contextlib import asynccontextmanager
 load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
 
 # Add the project_2 directory to Python path
-project_2_path = os.path.join(os.path.dirname(__file__), '..', 'project_2')
+project_2_path = os.path.join(os.path.dirname(__file__), '..')
 sys.path.append(project_2_path)
 
 # Import your existing modules
@@ -199,4 +199,4 @@ async def process_query(request: QueryRequest):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000, timeout_keep_alive=300) 
+    uvicorn.run(app, host="0.0.0.0", port=8000, timeout_keep_alive=300)
