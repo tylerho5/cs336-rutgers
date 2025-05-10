@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { submitQuery } from '../services/api';
 import { Database, Github, Menu, Send, Sparkles, Download } from 'lucide-react';
+import { Table } from '../components/ui/table';
 
 interface QueryMessage {
   role: 'user' | 'assistant';
@@ -264,7 +265,7 @@ function MessageDisplay({ message }: { message: QueryMessage }) {
   
   if (isUser) {
     return (
-      <div className="flex items-start ml-auto max-w-3xl">
+      <div className="flex justify-end items-end ml-auto max-w-3xl">
         <div className="rounded-lg bg-emerald-600 text-white px-4 py-2 max-w-[85%]">
           <div className="prose prose-sm prose-invert">
             {message.content}
@@ -339,69 +340,7 @@ function MessageDisplay({ message }: { message: QueryMessage }) {
             <div>
               {hasResults ? (
                 <>
-                  <div className="flex justify-between items-center mb-3">
-                    <div className="relative">
-                      <button 
-                        onClick={() => {
-                          // CSV Export function
-                          const headerRow = headers.join(',');
-                          const csvRows = rows.map(row => row.map(cell => 
-                            // Wrap cells in quotes to handle commas in content
-                            `"${cell.replace(/"/g, '""')}"`
-                          ).join(','));
-                          
-                          const csvContent = [headerRow, ...csvRows].join('\n');
-                          const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                          const url = URL.createObjectURL(blob);
-                          const link = document.createElement('a');
-                          link.setAttribute('href', url);
-                          link.setAttribute('download', 'query_results.csv');
-                          link.style.visibility = 'hidden';
-                          document.body.appendChild(link);
-                          link.click();
-                          document.body.removeChild(link);
-                        }}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      >
-                        <Download className="h-4 w-4" />
-                        <span>Export CSV</span>
-                      </button>
-                    </div>
-                  </div>
-                  <div className="overflow-x-auto rounded-md border border-gray-200">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          {headers.map((header, index) => (
-                            <th
-                              key={index}
-                              scope="col"
-                              className="px-3 py-3.5 text-left text-sm font-medium text-gray-500"
-                            >
-                              {header}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200 bg-white">
-                        {rows.map((row, rowIndex) => (
-                          <tr key={rowIndex} className="hover:bg-gray-50">
-                            {row.map((cell, cellIndex) => (
-                              <td
-                                key={cellIndex}
-                                className="whitespace-nowrap px-3 py-3 text-sm text-gray-500"
-                              >
-                                {cell}
-                              </td>
-                            ))}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  <div className="mt-2 text-sm text-gray-500">
-                    {rows.length} {rows.length === 1 ? 'row' : 'rows'}
-                  </div>
+                  <Table headers={headers} rows={rows} />
                 </>
               ) : (
                 <div className="text-sm text-gray-600">No results available.</div>
