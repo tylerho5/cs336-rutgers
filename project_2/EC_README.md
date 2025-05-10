@@ -4,7 +4,7 @@ This project enhances the original Natural Language Database Interface (Project 
 
 ## Video Demo
 
-[Link to your demo video here]
+Video demonstrating the frontend, showing several queries as well as interacting with the tables.
 
 ## Project Structure
 
@@ -24,14 +24,15 @@ This project enhances the original Natural Language Database Interface (Project 
 
 ## Features Implemented
 
-- ✅ **Basic Working Frontend**: Input box for natural language queries and results display
-- ✅ **Interactive Tables**: Sortable columns with clean formatting
-- ✅ **Detailed Output View**: Separate tabs for:
+- **Basic Working Frontend**: Input box for natural language queries and results display
+- **Interactive Tables**: Sortable columns with clean formatting
+- **Detailed Output View**: Separate tabs for:
   - SQL query and relational algebra
   - LLM processing output
   - Query results
-- ✅ **Modern UI**: Clean, responsive design with intuitive navigation
-- ✅ **Error Handling**: User-friendly error messages
+- **Modern UI**: Clean, responsive design with intuitive navigation
+- **Exporting Results**: Included the functionality to export tables generated to .csv file
+- **Error Handling**: User-friendly error messages
 
 ## Technologies Used
 
@@ -49,12 +50,15 @@ This project enhances the original Natural Language Database Interface (Project 
 - NPM
 - Access to Rutgers iLab
 
+
+**The set up instructions from the initial Project 2 README should be followed first before trying to run run_ec_project.sh**
+
 ### 1. Set Up Credentials
 
 First, you need to set up your database credentials:
 
 ```bash
-# Run the credentials setup script (now located in project_2)
+# Run the credentials setup script 
 ./project_2/setup_credentials.sh
 ```
 
@@ -68,7 +72,7 @@ The easiest way to run the application is using the provided shell script:
 # Make the script executable (if needed)
 chmod +x ./project_2/run_ec_project.sh
 
-# Run the application (now located in project_2)
+# Run the application
 ./project_2/run_ec_project.sh
 ```
 
