@@ -6,6 +6,13 @@ This project enhances the original Natural Language Database Interface (Project 
 
 Video demonstrating the frontend, showing several queries as well as interacting with the tables.
 
+## Team Members
+
+Rohan Sharma (rs2563)
+Daneliz Urena (dlu8)
+Tyler Ho (tjh195)
+Robin Del Rosario (rhd41)
+
 ## Project Structure
 
 ```
@@ -184,3 +191,8 @@ Helpful log messages are printed to the terminal where you ran `./project_2/run_
 - Timing information for each phase
 - Any connection or processing errors
 
+### AI/LLM Usage
+
+Here is a transcript showing how we used ChatGPT for this project:
+
+https://chatgpt.com/share/681da0b0-d630-8001-896a-6ebe93649b98
