@@ -6,6 +6,8 @@ This project enhances the original Natural Language Database Interface (Project 
 
 Video demonstrating the frontend, showing several queries as well as interacting with the tables.
 
+https://youtu.be/HqKs7rdZSUU
+
 ## Team Members
 
 Rohan Sharma (rs2563)
